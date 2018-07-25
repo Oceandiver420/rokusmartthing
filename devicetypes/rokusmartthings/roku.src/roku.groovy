@@ -147,13 +147,13 @@ def parse(description) {
 
 def installed() {
 	rokuDeviceInfoAction()
-	getCurrentActivity();    
+	getCurrentActivity();
 }
 
 def refresh() {
 	rokuDeviceInfoAction()
-	getCurrentActivity(); 
-		getAllActivities()
+	getCurrentActivity();
+	getAllActivities()
 }
 
 /*** rokuDeviceInfoAction -> parse -> parseDeviceInfo
@@ -208,7 +208,7 @@ private parseDeviceInfo(bodyXml){
 	sendEvent(name: "userdevicename",value: uName.text())
 
 	def power = bodyXml.'power-mode'
-	sendEvent(name: "switch", value: power.text()=="PowerOn" ? "on" : "off", displayed: false)   
+	sendEvent(name: "switch", value: power.text()=="PowerOn" ? "on" : "off", displayed: false)
 	
 	def version = bodyXml.'software-version'
 	def build = bodyXml.'software-build'
