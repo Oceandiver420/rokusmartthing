@@ -30,13 +30,15 @@ metadata {
 		attribute "activeApp", "String"
 		attribute "activityList", "String"
 
-		command "homeButton"
-		command "selectButton"
-		command "previousButton"
-		command "nextButton"
+
 		command "getAllActivities"
-		command "startActivityWithContent", ["String","String"]
+		command "homeButton"
+		command "launchAppId"
+		command "nextButton"
 		command "pressKey", ["String"]
+        command "previousButton"
+		command "selectButton"
+		command "startActivityWithContent", ["String","String"]
 	}
 
 	tiles(scale: 2) {
