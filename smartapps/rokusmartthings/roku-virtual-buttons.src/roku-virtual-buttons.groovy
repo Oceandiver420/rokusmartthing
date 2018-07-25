@@ -121,7 +121,7 @@ def initialize() {
 	state.button_pref.values().each() {
         it.enabled = settings.get(it.id, false)
 		if (getChildDevice(it.id) == null && it.enabled) {
-        	def device = addChildDevice("RokuSmartThings", "Roku Button Tile", it.id, null, [label: "Roku: ${it.label}"])
+        	def device = addChildDevice("RokuSmartThings", "Roku Button Tile", it.id, null, [label: "Roku ${it.label}"])
 			state["$device.id"] = it.id
 			log.debug "Created button tile $device.id for channel ${it.label} (${it.id})"
         }
