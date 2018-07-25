@@ -36,9 +36,10 @@ metadata {
 		command "launchAppId"
 		command "nextButton"
 		command "pressKey", ["String"]
-        command "previousButton"
+    command "previousButton"
 		command "selectButton"
 		command "startActivityWithContent", ["String","String"]
+		command "wakeViaLan"
 	}
 
 	tiles(scale: 2) {
@@ -421,6 +422,15 @@ def startActivityWithContent(String appName,contentId = null){
 	//Refresh Current Activity after 5 ish seconds 
 	runIn(5, getCurrentActivity)
 }
+
+/*** wakeViaLan
+	Turns the Roku on via wake on lan.
+***/
+def wakeViaLan(){
+	sendHubCommand(new physicalgraph.device.HubAction(
+			"wake on lan ${deviceNetworkId}", physicalgraph.device.Protocol.LAN, null, [:]))
+}
+
 /*** pressKey
 	Act as is a button is pressed on the remote.
 		
