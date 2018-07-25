@@ -15,86 +15,86 @@
  */
 
 definition(
-  name: "Roku Virtual Buttons",
-  namespace: "RokuSmartThings",
-  author: "Sam Steele",
-  description: "Creates virtual buttons to switch between apps / inputs on a Roku TV",
-  category: "SmartThings Labs",
-  iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
-  iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
-  iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
+	name: "Roku Virtual Buttons",
+	namespace: "RokuSmartThings",
+	author: "Sam Steele",
+	description: "Creates virtual buttons to switch between apps / inputs on a Roku TV",
+	category: "SmartThings Labs",
+	iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
+	iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
+	iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
 )
 
 // TODO(stevenfeldman): Add option to disable some buttons.
 preferences {
-  section("Title") {
-    input "roku","capability.mediaController", title: "Roku Device", multiple: false, required: true
-  }
+	section("Title") {
+		input "roku","capability.mediaController", title: "Roku Device", multiple: false, required: true
+	}
 }
 
 def installed() {
-  initialize()
+	initialize()
 }
 
 def updated() {
-  unsubscribe()
-  initialize()
+	unsubscribe()
+	initialize()
 }
 
 def initialize() {
-  subscribe(roku, "activityList", createButtons)
-  createButtons(null)
-  roku.getAllActivities()
+	subscribe(roku, "activityList", createButtons)
+	createButtons(null)
+	roku.getAllActivities()
 }
 
 def createButtons(evt) {
-  def activityList = roku.currentValue("activityList")
-  if (activityList != null) {
-    def appsNode = new XmlSlurper().parseText(activityList)
+	def activityList = roku.currentValue("activityList")
+	if (activityList != null) {
+		def appsNode = new XmlSlurper().parseText(activityList)
 
-    appsNode.children().each{
-      def appId = it.@id.toString()
-      def deviceLabel = it.text()
-      if (getChildDevice(appId) == null) {
-        def device = addChildDevice("RokuSmartThings", "Roku Button Tile", appId, null, [label: "Roku: $deviceLabel"])
-        state["$device.id"] = appId
-        log.debug "Created button tile $device.id for channel $deviceLabel ($appId)"
-      } else {
-        log.debug "Skipped $appId"
-      }
-    }
-  }
-    
-  if (getChildDevice("powerOn") == null) {
-      def device = addChildDevice("RokuSmartThings", "Roku Button Tile", "powerOn", null, [label: "Roku: Power On"])
-      state["$device.id"] = "powerOn"
-      log.debug "Created Power On tile $device.id"
-  } else {
-      log.debug "Skipped Power On tile"
-  }
+		appsNode.children().each{
+			def appId = it.@id.toString()
+			def deviceLabel = it.text()
+			if (getChildDevice(appId) == null) {
+				def device = addChildDevice("RokuSmartThings", "Roku Button Tile", appId, null, [label: "Roku: $deviceLabel"])
+				state["$device.id"] = appId
+				log.debug "Created button tile $device.id for channel $deviceLabel ($appId)"
+			} else {
+				log.debug "Skipped $appId"
+			}
+		}
+	}
+		
+	if (getChildDevice("powerOn") == null) {
+			def device = addChildDevice("RokuSmartThings", "Roku Button Tile", "powerOn", null, [label: "Roku: Power On"])
+			state["$device.id"] = "powerOn"
+			log.debug "Created Power On tile $device.id"
+	} else {
+			log.debug "Skipped Power On tile"
+	}
 
-  if (getChildDevice("powerOff") == null) {
-    def device = addChildDevice("RokuSmartThings", "Roku Button Tile", "powerOff", null, [label: "Roku: Power Off"])
-    state["$device.id"] = "powerOff"
-    log.debug "Created Power Off tile $device.id"
-  } else {
-    log.debug "Skipped Power Off tile"
-  }
+	if (getChildDevice("powerOff") == null) {
+		def device = addChildDevice("RokuSmartThings", "Roku Button Tile", "powerOff", null, [label: "Roku: Power Off"])
+		state["$device.id"] = "powerOff"
+		log.debug "Created Power Off tile $device.id"
+	} else {
+		log.debug "Skipped Power Off tile"
+	}
 
-  getAllChildDevices().each {
-    subscribe(it, "switch", switchHandler)
-  }
+	getAllChildDevices().each {
+		subscribe(it, "switch", switchHandler)
+	}
 }
 
 def switchHandler(evt) {
-  if (evt.value == "on") {
-    if (state["$evt.device.id"] == "powerOn") {
-      sendHubCommand(new physicalgraph.device.HubAction ("wake on lan ${roku.deviceNetworkId}", physicalgraph.device.Protocol.LAN, null, [:]))
-      roku.pressKey("Power")
-    } else if (state["$evt.device.id"] == "powerOff") {
-      roku.pressKey("PowerOff")
-    } else {
-      roku.launchAppId(state["$evt.device.id"])
-    }
-  }
+	if (evt.value == "on") {
+		if (state["$evt.device.id"] == "powerOn") {
+			sendHubCommand(new physicalgraph.device.HubAction ("wake on lan ${roku.deviceNetworkId}", physicalgraph.device.Protocol.LAN, null, [:]))
+			roku.pressKey("Power")
+		} else if (state["$evt.device.id"] == "powerOff") {
+			roku.pressKey("PowerOff")
+		} else {
+			roku.launchAppId(state["$evt.device.id"])
+		}
+	}
 }

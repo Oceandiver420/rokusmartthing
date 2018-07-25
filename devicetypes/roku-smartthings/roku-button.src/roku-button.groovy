@@ -17,43 +17,43 @@
  *  Date: 2013-05-01
  */
 metadata {
-  definition (name: "Roku Button Tile", namespace: "roku-button", author: "SmartThings") {
-    capability "Actuator"
-    capability "Switch"
-    capability "Momentary"
-    capability "Sensor"
-  }
+	definition (name: "Roku Button Tile", namespace: "roku-button ", author: "SmartThings") {
+		capability "Actuator"
+		capability "Switch"
+		capability "Momentary"
+		capability "Sensor"
+	}
 
-  // simulator metadata
-  simulator {
-  }
+	// simulator metadata
+	simulator {
+	}
 
-  // UI tile definitions
-  tiles(scale: 2){
-    multiAttributeTile(name:"switch", type: "generic", width: 6, height: 4, canChangeIcon: true){
-      tileAttribute("device.switch", key: "PRIMARY_CONTROL") {
-        attributeState("off", label: 'Push', action: "momentary.push", backgroundColor: "#ffffff", nextState: "on")
-        attributeState("on", label: 'Push', action: "momentary.push", backgroundColor: "#00a0dc")
-      } 
-    }
-    main "switch"
-    details "switch"
-  }
+	// UI tile definitions
+	tiles(scale: 2){
+		multiAttributeTile(name:"switch", type: "generic", width: 6, height: 4, canChangeIcon: true){
+			tileAttribute("device.switch", key: "PRIMARY_CONTROL") {
+				attributeState("off", label: 'Push', action: "momentary.push", backgroundColor: "#ffffff", nextState: "on")
+				attributeState("on", label: 'Push', action: "momentary.push", backgroundColor: "#00a0dc")
+			} 
+		}
+		main "switch"
+		details "switch"
+	}
 }
 
 def parse(String description) {
 }
 
 def push() {
-  sendEvent(name: "switch", value: "on", isStateChange: true, displayed: false)
-  sendEvent(name: "switch", value: "off", isStateChange: true, displayed: false)
-  sendEvent(name: "momentary", value: "pushed", isStateChange: true)
+	sendEvent(name: "switch", value: "on", isStateChange: true, displayed: false)
+	sendEvent(name: "switch", value: "off", isStateChange: true, displayed: false)
+	sendEvent(name: "momentary", value: "pushed", isStateChange: true)
 }
 
 def on() {
-  push()
+	push()
 }
 
 def off() {
-  push()
+	push()
 }
