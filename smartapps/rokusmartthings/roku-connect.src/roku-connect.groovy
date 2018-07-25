@@ -106,8 +106,7 @@ private removeChildDevices(delete) {
 
 void ssdpDiscover() {
 	log.debug "ssdpDiscover: roku:ecp"
-	sendHubCommand(new physicalgraph.device.HubAction(
-		"lan discovery roku:ecp", physicalgraph.device.Protocol.LAN))
+	sendHubCommand(new physicalgraph.device.HubAction("lan discovery roku:ecp", physicalgraph.device.Protocol.LAN))
 }
 
 void ssdpSubscribe() {
@@ -128,12 +127,17 @@ Map verifiedDevices() {
 }
 
 void verifyDevices() {
-	log.debug "verifyDevices"
 	def devices = getDevices()
+	if (devices.size() == 0) {
+    	log.warn "No devices to verify"
+    } else {
+	    log.debug "Verifying ${devices.size()} devices"    
+    }
 	devices.each {
 		int port = convertHexToInt(it.value.deviceAddress)
 		String ip = convertHexToIP(it.value.networkAddress)
 		String host = "${ip}:${port}"
+        log.debug "Veryifing ${host}"
 		sendHubCommand(new physicalgraph.device.HubAction(
 			"""GET ${it.value.ssdpPath} HTTP/1.1\r\nHOST: ${host}\r\n\r\n""",
 			physicalgraph.device.Protocol.LAN, host, [callback: deviceDescriptionHandler]))
@@ -168,7 +172,7 @@ def addDevices() {
 
 		if (!d) {
 			log.debug "Creating Roku Device with dni: ${selectedDevice.value} - ${selectedDevice.value.networkAddress} : ${selectedDevice.value.deviceAddress}"
-			addChildDevice("madmouse", "Roku", selectedDevice.value.mac, selectedDevice?.value.hub, [
+			addChildDevice("RokuSmartThings", "Roku", selectedDevice.value.mac, selectedDevice?.value.hub, [
 				"label": selectedDevice?.value?.name ?: "Roku - ${selectedDevice.value.mac}",
 				"data": [
 					"mac": selectedDevice.value.mac,
