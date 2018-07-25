@@ -15,9 +15,9 @@
  */
 definition(
     name: "Roku (Connect)",
-    namespace: "madmouse",
+    namespace: "RokuSmartThings",
     author: "Leslie Drewery",
-    description: "Manage Roku Devices ",
+    description: "Manage Roku Devices",
     singleInstance: true,
     category: "SmartThings Labs",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
@@ -30,8 +30,6 @@ preferences {
     page(name: "deviceDiscovery", title: "Roku Device Setup", content: "deviceDiscovery")
 }
 
-
-
 def deviceDiscovery() {
 	int refreshCount = !state.refreshCount ? 0 : state.refreshCount as int
 	state.refreshCount = refreshCount + 1
@@ -40,29 +38,28 @@ def deviceDiscovery() {
 	def options = [:]
 	def devices = getVerifiedDevices()
 	devices.each {
-    	def values = it.value.ssdpUSN.split(':')
+    def values = it.value.ssdpUSN.split(':')
 		def value = it.value.name ?: "${values[1]}-${values[3]}"
 		def key = it.value.mac
 		options["${key}"] = value
 	}
 
 
-	if(!state.subscribe) {
-        	log.debug "subscribe :: ${refreshCount}"
-			ssdpSubscribe();
-			
+	if (!state.subscribe) {
+    log.debug "subscribe :: ${refreshCount}"
+		ssdpSubscribe();	
 	}
 	
-    //ssdp request every 25 seconds
-	if((refreshCount % 5) == 0) {
+  // ssdp request every 25 seconds
+	if ((refreshCount % 5) == 0) {
 		ssdpDiscover()
-    }
+  }
 	
-    //setup.xml request every 5 seconds except on discoveries
-    if(((refreshCount % 1) == 0) && ((refreshCount % 5) != 0)) {
-        log.debug "verifyDevices :: ${refreshCount}"
-        verifyDevices()
-    }
+  // setup.xml request every 5 seconds except on discoveries
+  if (((refreshCount % 1) == 0) && ((refreshCount % 5) != 0)) {
+    log.debug "verifyDevices :: ${refreshCount}"
+    verifyDevices()
+  }
 
 	return dynamicPage(name: "deviceDiscovery", title: "Discovery Started!", nextPage: "", refreshInterval: 5, install: true, uninstall: true) {
 		section("Please wait while we discover your Roku Devices. Discovery can take five minutes or more, so sit back and relax! Select your device below once discovered.") {
@@ -141,7 +138,7 @@ void verifyDevices() {
 
 def getVerifiedDevices() {
 	log.debug "getVerifiedDevices"
-    getDevices()
+  getDevices()
 }
 
 def getDevices() {
@@ -232,12 +229,13 @@ def ssdpHandler(evt) {
 void deviceDescriptionHandler(physicalgraph.device.HubResponse hubResponse) {
 	def body = hubResponse.xml
 	def devices = getDevices()
-	def device = devices.find { it?.key?.contains(body?.device-info?.udn?.text()) }
+	def device = devices.find {it?.key?.contains(body?.device-info?.udn?.text()) }
 	if (device) {
 		log.debug "device verified"
-    	device.value << [name: body?.device-info?.user-device-name?.text(), 
-        				 model:body?.device-info?.model-number?.text(), 
-                         serialNumber:body?.device-info?.serial-number?.text(), verified: true]
+  	device.value << [name: body?.device-info?.user-device-name?.text(), 
+                     model: body?.device-info?.model-number?.text(), 
+                     serialNumber: body?.device-info?.serial-number?.text(),
+                     verified: true]
 	}
 }
 
@@ -252,12 +250,11 @@ private String convertHexToIP(hex) {
 private Boolean canInstallLabs() {
 	return hasAllHubsOver("000.011.00603")
 }
-private Boolean hasAllHubsOver(String desiredFirmware)
-{
+
+private Boolean hasAllHubsOver(String desiredFirmware) {
 	return realHubFirmwareVersions.every { fw -> fw >= desiredFirmware }
 }
 
-private List getRealHubFirmwareVersions()
-{
+private List getRealHubFirmwareVersions() {
 	return location.hubs*.firmwareVersionString.findAll { it }
 }

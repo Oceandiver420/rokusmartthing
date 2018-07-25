@@ -1,17 +1,17 @@
-# SmartThings
-SmartThings Repo
+# Roku Smartthings SmartApps and Device Handlers
 
-Roku Manager
+This repo contains various bits of code for controlling Roku devices via smartthings.
 
-Adds Roku Devices EPC with Demo App.<br>
-<br>
-Steps<br>
-1.) Add RokuDeviceHandler.<br>
-2.) Add RokuConnect.<br>
-<br>
-You will need run the Roku (Connect) app to find devices.
+## List of Repos that have been copied into this:
 
-Demo App
-This will change the channel when a switch is triggered.
++ github.com/MadMouse/SmartThings
+  - Initial Roku connect code
++ github.com/kkessler/RokuSmartApp
+  - Fixed the directory structure
++ github.com/c99koder/SmartThings
+  - Roku Virtual button magic
 
-I have added a few utils to get installed apps.
+
+# Instructions
+
+<todo>

@@ -13,29 +13,31 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  */
-metadata {
-	definition (name: "Roku", namespace: "madmouse", author: "Leslie Drewery") {
-    	capability "Actuator"
-		capability "Sensor"
-        capability "Refresh"             
-        capability "Switch"
-        capability "Media Controller"
-        
 
-        attribute "activeAppId", "String"
-        attribute "activeAppUpdated", "String"
-        attribute "supportsVolume", "String"
-        attribute "deviceInfo", "String"
-        attribute "activeApp", "String"
-        attribute "activityList", "String"
-        
-		command "homeButton"
-        command "selectButton"
-        command "previousButton"
-        command "nextButton"
-        command "startActivityWithContent", ["String","String"]
-        command "pressKey", ["String"]
-	}
+metadata {
+	definition (name: "Roku", namespace: "RokuSmartThings", author: "Leslie Drewery") {
+    capability "Actuator"
+    capability "Sensor"
+    capability "Refresh"             
+    capability "Switch"
+    capability "Media Controller"
+
+
+    attribute "activeAppId", "String"
+    attribute "activeAppUpdated", "String"
+    attribute "supportsVolume", "String"
+    attribute "deviceInfo", "String"
+    attribute "activeApp", "String"
+    attribute "activityList", "String"
+
+    command "homeButton"
+    command "selectButton"
+    command "previousButton"
+    command "nextButton"
+    command "getAllActivities"
+    command "startActivityWithContent", ["String","String"]
+    command "pressKey", ["String"]
+  }
 
 	tiles(scale: 2) {
 		multiAttributeTile(name: "main", type:"mediaPlayer", width:6, height:3, canChangeIcon: true) {
@@ -67,82 +69,80 @@ metadata {
 
 		standardTile("refresh", "device.status",  width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
 			state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh", backgroundColor:"#ffffff"
-         
 		}
 
 		tiles {
-    		valueTile("model", "device.model", decoration: "flat", width: 4, height: 1) {
-           		state "default", label:'Model : ${currentValue}'
-    		}
-            
-            valueTile("userdevicename", "device.userdevicename", decoration: "flat", width: 4, height: 1) {
-           		state "default", label:'Name : ${currentValue}'
-    		}
+  		valueTile("model", "device.model", decoration: "flat", width: 4, height: 1) {
+     		state "default", label:'Model : ${currentValue}'
+  		}
+          
+      valueTile("userdevicename", "device.userdevicename", decoration: "flat", width: 4, height: 1) {
+     		state "default", label:'Name : ${currentValue}'
+  		}
 		}
         
 		standardTile("homeButton", "device.homeButton",  width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-			state "default", label:"", action:"homeButton", icon:"st.Home.home2", backgroundColor:"#ffffff"
-         
+			state "default", label:"", action:"homeButton", icon:"st.Home.home2", backgroundColor:"#ffffff"  
 		}
 
 		standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: true) {
 			state "on", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#79b821"
 			state "off", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff"
 		}
+
 		tiles {
     		valueTile("softwareVersion", "device.softwareversion", decoration: "flat", width: 4, height: 1) {
-           		state "default", label:'Version : ${currentValue}'
+       		state "default", label:'Version : ${currentValue}'
     		}
-            
-            valueTile("deviceId", "device.deviceid", decoration: "flat", width: 4, height: 1) {
-           		state "default", label:'ID : ${currentValue}'
+        valueTile("deviceId", "device.deviceid", decoration: "flat", width: 4, height: 1) {
+       		state "default", label:'ID : ${currentValue}'
     		}
-            
-            valueTile("channels", "device.channels", decoration: "flat", width: 4, height: 1) {
-           		state "default", label:'${currentValue}', action:"mediaController.activities"
+        valueTile("channels", "device.channels", decoration: "flat", width: 4, height: 1) {
+       		state "default", label:'${currentValue}', action:"mediaController.activities"
     		}
 		}
 
  		main "main"
-
-		details(["main","refresh","userdevicename","model","homeButton","softwareVersion","deviceId","switch","channels"])
+		details(["main", "refresh", "userdevicename",
+             "model", "homeButton", "softwareVersion",
+             "deviceId", "switch", "channels"])
 	}
-
 }
 
 // parse events into attributes
 def parse(description) {
-    def msg = parseLanMessage(description)
-    def eventObj
-    if(msg.xml){
-    	try {
-        	//Handle Device Info Requests.
-        	if(msg.body.contains("<device-info>")){
-            	eventObj = parseDeviceInfo(msg.xml)
-                //Save Message body to deviceInfo Attribute
-                sendEvent(name: "deviceInfo",value: msg.body,isStateChange:true)
-            }
-
-			//Handle Currently Active App Requests.
-			if(msg.body.contains("<active-app>")){
-                eventObj = parseActiveApp(msg.xml);
-                //Save Message body to activeApp Attribute
-                sendEvent(name: "activeApp",value: msg.body,isStateChange:true)
-            }
-
-			//Handle List of Installed App Requests.
-            if(msg.body.contains("<apps>")){
-                eventObj = parseApps(msg.xml);
-                //Save Message body to activityList Attribute
-                sendEvent(name: "activityList",value: msg.body)
-            }
-        }catch (Throwable t) {
-            //results << createEvent(name: "parseError", value: "$t")
-            eventObj = createEvent(name: "parseError", value: "$t", description: description)
-            throw t
-        }
-    }
+  def msg = parseLanMessage(description)
+  def eventObj
+  if(!msg.xml){
     return eventObj
+  }
+	try {
+  	//Handle Device Info Requests.
+  	if (msg.body.contains("<device-info>")) {
+    	eventObj = parseDeviceInfo(msg.xml)
+      //Save Message body to deviceInfo Attribute
+      sendEvent(name: "deviceInfo",value: msg.body,isStateChange:true)
+    }
+
+  	//Handle Currently Active App Requests.
+  	if (msg.body.contains("<active-app>")) {
+      eventObj = parseActiveApp(msg.xml);
+      //Save Message body to activeApp Attribute
+      sendEvent(name: "activeApp",value: msg.body,isStateChange:true)
+    }
+
+	  //Handle List of Installed App Requests.
+    if (msg.body.contains("<apps>")) {
+      eventObj = parseApps(msg.xml);
+      //Save Message body to activityList Attribute
+      sendEvent(name: "activityList",value: msg.body)
+    }
+  } catch (Throwable t) {
+    //results << createEvent(name: "parseError", value: "$t")
+    eventObj = createEvent(name: "parseError", value: "$t", description: description)
+    throw t
+  }
+  return eventObj
 }
 
 def installed() {
@@ -192,30 +192,31 @@ def refresh() {
     </device-info>
 ***/
 private rokuDeviceInfoAction() {
-    String host = getHostAddress()
-    log.info("rokuDeviceInfoAction ${host}")
-	def hubAction = new physicalgraph.device.HubAction("""GET /query/device-info HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
-    													physicalgraph.device.Protocol.LAN, 
-                                                        host)
+  String host = getHostAddress()
+  log.info("rokuDeviceInfoAction ${host}")
+	def hubAction = new physicalgraph.device.HubAction(
+    """GET /query/device-info HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
+    physicalgraph.device.Protocol.LAN, host)
 	sendHubCommand(hubAction)
 }
+
 private parseDeviceInfo(bodyXml){
 	def model = bodyXml.'model-name'
-    sendEvent(name: "model",value: model.text())
+  sendEvent(name: "model",value: model.text())
     
-    def uName = bodyXml.'user-device-name'
-    sendEvent(name: "userdevicename",value: uName.text())
+  def uName = bodyXml.'user-device-name'
+  sendEvent(name: "userdevicename",value: uName.text())
 
 	def power = bodyXml.'power-mode'
-    sendEvent(name: "switch", value: power.text()=="PowerOn" ? "on" : "off", displayed: false)   
-    
-   	def version = bodyXml.'software-version'
-    def build = bodyXml.'software-build'
-    sendEvent(name: "softwareversion", value: "${version.text()}-${build.text()}")   
-    
-    def deviecId = bodyXml.'device-id'
-    sendEvent(name: "deviceid", value: "${deviecId.text()}")   
-    return createEvent(name:"activities", value : channelCount, description:description, isStateChange:true);
+  sendEvent(name: "switch", value: power.text()=="PowerOn" ? "on" : "off", displayed: false)   
+  
+ 	def version = bodyXml.'software-version'
+  def build = bodyXml.'software-build'
+  sendEvent(name: "softwareversion", value: "${version.text()}-${build.text()}")   
+  
+  def deviecId = bodyXml.'device-id'
+  sendEvent(name: "deviceid", value: "${deviecId.text()}")   
+  return createEvent(name:"activities", value : channelCount, description:description, isStateChange:true);
 }
 
 /*** rokuAppAction -> parse -> parseApps
@@ -230,19 +231,23 @@ private parseDeviceInfo(bodyXml){
 	</apps>
 ***/
 private rokuAppAction() {
-    String host = getHostAddress()
-	def hubAction = new physicalgraph.device.HubAction("""GET /query/apps HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
-    													physicalgraph.device.Protocol.LAN, 
-                                                        host)
+  String host = getHostAddress()
+	def hubAction = new physicalgraph.device.HubAction(
+    """GET /query/apps HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
+    physicalgraph.device.Protocol.LAN,host)
 	sendHubCommand(hubAction)
-
 }
+
 private parseApps(xmlBody) {
 	def channelCount = xmlBody.'app'.size();
-    //Update Channel Tile Value.
-    sendEvent(name: "channels",value: "Channels (${channelCount})")
-    //Create Activities Event.
-    return createEvent(name:"activities", value : channelCount, description:description, isStateChange:true);
+  //Update Channel Tile Value.
+  sendEvent(name: "channels",value: "Channels (${channelCount})")
+  //Create Activities Event.
+  return createEvent(
+    name:"activities",
+    value : channelCount,
+    description:description,
+    isStateChange:true);
 }
 
 /*** rokuActiveAppAction -> Parse -> parseActiveApp
@@ -277,31 +282,35 @@ private parseApps(xmlBody) {
 	</active-app>
 ***/
 private rokuActiveAppAction() {
-    String host = getHostAddress()
-	def hubAction = new physicalgraph.device.HubAction("""GET /query/active-app HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
-    													physicalgraph.device.Protocol.LAN, 
-                                                        host)
+  String host = getHostAddress()
+	def hubAction = new physicalgraph.device.HubAction(
+    """GET /query/active-app HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
+    physicalgraph.device.Protocol.LAN, host)
 	sendHubCommand(hubAction)
 }
 private parseActiveApp(body){
 	def currentAppId = device.currentValue("activeAppId")
-    def newAppName = body.app
-    def newAppId = body.app.@id
-    def eventToFire
-    if(newAppId){
-       if((!currentAppId) || (newAppId.text().compareTo(currentAppId) != 0)) {
-            log.debug("activeAppHandler App Update ${currentAppId} -> ${newAppId.text()}")
-            //Update the activeAppId Attribute 
-            sendEvent(name: "activeAppId",value: newAppId.text())
-            //Update the trackDescription Tile 
-            sendEvent(name: "trackDescription",value: newAppName.text())
-            //Update the Status to test background colors.
-            sendEvent(name: "status", value: newAppName.text())
-            //Create the Event to fire at the end of parse method.
-            eventToFire = createEvent(name:"currentActivity", value : newAppName.text(), description:description,isStateChange:true);
-        }
+  def newAppName = body.app
+  def newAppId = body.app.@id
+  def eventToFire
+  if(newAppId){
+   if((!currentAppId) || (newAppId.text().compareTo(currentAppId) != 0)) {
+      log.debug("activeAppHandler App Update ${currentAppId} -> ${newAppId.text()}")
+      //Update the activeAppId Attribute 
+      sendEvent(name: "activeAppId",value: newAppId.text())
+      //Update the trackDescription Tile 
+      sendEvent(name: "trackDescription",value: newAppName.text())
+      //Update the Status to test background colors.
+      sendEvent(name: "status", value: newAppName.text())
+      //Create the Event to fire at the end of parse method.
+      eventToFire = createEvent(
+        name:"currentActivity", 
+        value : newAppName.text(), 
+        description:description,
+        isStateChange:true);
     }
-    return eventToFire;
+  }
+  return eventToFire;
 }
 
 /*** rokuLaunchAction
@@ -322,13 +331,13 @@ private parseActiveApp(body){
 ***/
 private rokuLaunchAction(String appName, String contentId =null) {
 	def channelList = device.currentValue("activityList");
-    if(channelList){
-        def appNode = new XmlSlurper().parseText(channelList).children().find{it.text()==appName}
-        if(appNode){
-            def appId = appNode.@id
-            launchAppId(appId, contentId)
-        }
+  if(channelList){
+    def appNode = new XmlSlurper().parseText(channelList).children().find{it.text()==appName}
+    if(appNode){
+      def appId = appNode.@id
+      launchAppId(appId, contentId)
     }
+  }
 }
 
 /*** launchAppId
@@ -348,22 +357,22 @@ private rokuLaunchAction(String appName, String contentId =null) {
     Use the install command instead for uninstalled channels.
 ***/
 def launchAppId(String appId, String contentId =null) {
-    def urlText = "/launch/${appId}?contentId=${contentId}"
-    if(!contentId){
-        urlText = "/launch/${appId}"
-    }
+  def urlText = "/launch/${appId}?contentId=${contentId}"
+  if(!contentId){
+      urlText = "/launch/${appId}"
+  }
 
-    def httpRequest = [
-        method:		"POST",
-        path: 		urlText,
-        headers:	[
-            HOST: getHostAddress(),
-            Accept: 	"* /*",
-        ],
-    ]
+  def httpRequest = [
+    method:		"POST",
+    path: 		urlText,
+    headers:	[
+        HOST: getHostAddress(),
+        Accept: 	"* /*",
+    ],
+  ]
 
-    def hubAction = new physicalgraph.device.HubAction(httpRequest)
-    sendHubCommand(hubAction)
+  def hubAction = new physicalgraph.device.HubAction(httpRequest)
+  sendHubCommand(hubAction)
 }
 
 
@@ -386,18 +395,16 @@ def launchAppId(String appId, String contentId =null) {
     Lit_<char>
 ***/
 private rokuKeyPressAppAction(String action) {
-    def httpRequest = [
-      	method:		"POST",
-        path: 		"/keypress/" + action,
-        headers:	[
-        				HOST: getHostAddress(),
-						Accept: 	"*/*",
-                    ]
-	]
-
+  def httpRequest = [
+  	method: "POST",
+    path: "/keypress/" + action,
+    headers: [
+      HOST: getHostAddress(),
+			Accept: "*/*",
+    ]
+  ]
 	def hubAction = new physicalgraph.device.HubAction(httpRequest)
 	sendHubCommand(hubAction)
-
 }
 //-------------- Custom Commands --------------//
 /*** startActivityWithContent
@@ -408,9 +415,9 @@ private rokuKeyPressAppAction(String action) {
 def startActivityWithContent(String appName,contentId = null){
 	log.trace "startActivityWithContent Fired ${appName} - ${contentId}"
 	rokuLaunchAction(appName, contentId)
-    
-    //Refresh Current Activity after 5 ish seconds 
-    runIn(5, getCurrentActivity)
+
+  //Refresh Current Activity after 5 ish seconds 
+  runIn(5, getCurrentActivity)
 }
 /*** pressKey
 	Act as is a button is pressed on the remote.
@@ -426,8 +433,8 @@ def pressKey(keyValue){
 ***/
 def selectButton() {
 	rokuKeyPressAppAction("Select")
-    //Refresh Current Activity after 5 ish seconds 
-    runIn(5, getCurrentActivity)
+  //Refresh Current Activity after 5 ish seconds 
+  runIn(5, getCurrentActivity)
 }
 /*** homeButton
 	Act as if the Home button is pressed on the remote.
@@ -436,8 +443,8 @@ def selectButton() {
 ***/
 def homeButton() {
 	rokuKeyPressAppAction("Home")
-    //Refresh Current Activity after 5 ish seconds 
-    runIn(5, getCurrentActivity)
+  //Refresh Current Activity after 5 ish seconds 
+  runIn(5, getCurrentActivity)
 }
 /*** nextButton
 	Act as if the Right Arrow button is pressed on the remote.
@@ -455,11 +462,11 @@ def previousButton() {
 
 //-------------- Switch Commands --------------//
 def on() {
-    sendEvent(name: "switch", value: "on")
+  sendEvent(name: "switch", value: "on")
 }
 
 def off() {
-    sendEvent(name: "switch", value: "off")
+  sendEvent(name: "switch", value: "off")
 }
 //^^^^^^^^^^^^^^ Switch Commands ^^^^^^^^^^^^^^//
 
@@ -469,11 +476,11 @@ def off() {
     contentId = null.
 ***/
 def startActivity(String activity){
-    log.trace "activity - ${activity}"
-    rokuLaunchAction(activity);
-    
-    //Refresh Current Activity after 5 ish seconds 
-    runIn(5, getCurrentActivity)
+  log.trace "activity - ${activity}"
+  rokuLaunchAction(activity);
+  
+  //Refresh Current Activity after 5 ish seconds 
+  runIn(5, getCurrentActivity)
 }
 /*** getAllActivities
 	Return XML channel list in string format.
@@ -481,7 +488,7 @@ def startActivity(String activity){
 ***/
 def getAllActivities(){
 	log.trace "getAllActivities"
-    rokuAppAction()
+  rokuAppAction()
 }
 /*** getCurrentActivity
 	Return XML String of the currently running application.
@@ -506,7 +513,6 @@ private getHostAddress() {
   def existingIp = convertHexToIP(getDataValue("ip"))
   def existingPort = convertHexToInt(getDataValue("port"))
   return existingIp + ":" + existingPort
-    
 }
 
 private dniFromUri(uri) {
