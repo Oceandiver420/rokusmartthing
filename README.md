@@ -10,6 +10,8 @@ This repo contains various bits of code for controlling Roku devices via smartth
   - Fixed the directory structure
 + github.com/c99koder/SmartThings
   - Roku Virtual button magic
++ github.com/adamhwang
+  - Power on/off fix
 
 
 # Instructions

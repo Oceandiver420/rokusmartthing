@@ -462,40 +462,46 @@ def previousButton() {
 
 //-------------- Switch Commands --------------//
 def on() {
-	sendEvent(name: "switch", value: "on")
+	rokuKeyPressAppAction("PowerOn")
+	refresh()
 }
 
 def off() {
-	sendEvent(name: "switch", value: "off")
+	rokuKeyPressAppAction("PowerOff")
+	refresh()
 }
+
 //^^^^^^^^^^^^^^ Switch Commands ^^^^^^^^^^^^^^//
 
 //-------------- Media Controller Commands --------------//
+
 /*** startActivity -> rokuLaunchAction
 	Launch the installed Application via it's Name.
 		contentId = null.
 ***/
-def startActivity(String activity){
+def startActivity(String activity) {
 	log.trace "activity - ${activity}"
 	rokuLaunchAction(activity);
 	
 	//Refresh Current Activity after 5 ish seconds 
 	runIn(5, getCurrentActivity)
 }
+
 /*** getAllActivities
 	Return XML channel list in string format.
 		refer to rokuAppAction for XML format.
 ***/
-def getAllActivities(){
+def getAllActivities() {
 	log.trace "getAllActivities"
 	rokuAppAction()
 }
+
 /*** getCurrentActivity
 	Return XML String of the currently running application.
 		
 		refer to rokuActiveAppAction XML for format.
 ***/
-def getCurrentActivity(){
+def getCurrentActivity() {
 	log.trace "getCurrentActivity"
 	rokuActiveAppAction(); 
 }
