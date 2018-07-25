@@ -22,7 +22,6 @@ metadata {
 		capability "Switch"
 		capability "Media Controller"
 
-
 		attribute "activeAppId", "String"
 		attribute "activeAppUpdated", "String"
 		attribute "supportsVolume", "String"
@@ -30,16 +29,14 @@ metadata {
 		attribute "activeApp", "String"
 		attribute "activityList", "String"
 
-
 		command "getAllActivities"
 		command "homeButton"
 		command "launchAppId"
 		command "nextButton"
 		command "pressKey", ["String"]
-    command "previousButton"
+        command "previousButton"
 		command "selectButton"
 		command "startActivityWithContent", ["String","String"]
-		command "wakeViaLan"
 	}
 
 	tiles(scale: 2) {
@@ -48,25 +45,24 @@ metadata {
 				attributeState("default", action:"selectButton")
 			}
 			tileAttribute("device.status", key: "MEDIA_STATUS") {
-				attributeState("default", action:"selectButton",label:"${currentValue}")
+				attributeState("default", action:"selectButton", label:"${currentValue}")
 			}
 
 			tileAttribute("device.status", key: "PREVIOUS_TRACK") {
 				attributeState("default", action:"previousButton")
 			}
 			
-						tileAttribute("device.status", key: "NEXT_TRACK") {
+			tileAttribute("device.status", key: "NEXT_TRACK") {
 				attributeState("default", action:"nextButton")
 			}
 
 			tileAttribute("device.trackDescription", key: "MARQUEE") {
 				attributeState("default", label:"${currentValue}", backgroundColor:"#00ffff")
-								state "Roku", label:'${currentValue}', backgroundColor:"#6600ff"
-								state "Netflix", label:'${currentValue}', backgroundColor:"#ff0000"
-								state "Play Movies", label:'${currentValue}', backgroundColor:"#ff0000"
-								state "Amazon Video", label:'${currentValue}', backgroundColor:"#6600ff"
-						
-					 }
+                state "Roku", label:'${currentValue}', backgroundColor:"#6600ff"
+                state "Netflix", label:'${currentValue}', backgroundColor:"#ff0000"
+                state "Play Movies", label:'${currentValue}', backgroundColor:"#ff0000"
+                state "Amazon Video", label:'${currentValue}', backgroundColor:"#6600ff"
+			}
 		}
 
 
@@ -94,21 +90,20 @@ metadata {
 		}
 
 		tiles {
-				valueTile("softwareVersion", "device.softwareversion", decoration: "flat", width: 4, height: 1) {
-					state "default", label:'Version : ${currentValue}'
-				}
-				valueTile("deviceId", "device.deviceid", decoration: "flat", width: 4, height: 1) {
-					state "default", label:'ID : ${currentValue}'
-				}
-				valueTile("channels", "device.channels", decoration: "flat", width: 4, height: 1) {
-					state "default", label:'${currentValue}', action:"mediaController.activities"
-				}
+			valueTile("softwareVersion", "device.softwareversion", decoration: "flat", width: 4, height: 1) {
+				state "default", label:'Version : ${currentValue}'
+			}
+			valueTile("deviceId", "device.deviceid", decoration: "flat", width: 4, height: 1) {
+				state "default", label:'ID : ${currentValue}'
+			}
+			valueTile("channels", "device.channels", decoration: "flat", width: 4, height: 1) {
+				state "default", label:'${currentValue}', action:"mediaController.activities"
+			}
 		}
 
 		main "main"
-		details(["main", "refresh", "userdevicename",
-						 "model", "homeButton", "softwareVersion",
-						 "deviceId", "switch", "channels"])
+		details(["main", "refresh", "userdevicename", "model", "homeButton", "softwareVersion",
+				 "deviceId", "switch", "channels"])
 	}
 }
 
@@ -150,13 +145,13 @@ def parse(description) {
 
 def installed() {
 	rokuDeviceInfoAction()
-	getCurrentActivity();
+	getCurrentActivity();    
 }
 
 def refresh() {
 	rokuDeviceInfoAction()
-	getCurrentActivity();
-	getAllActivities()
+	getCurrentActivity(); 
+		getAllActivities()
 }
 
 /*** rokuDeviceInfoAction -> parse -> parseDeviceInfo
@@ -211,7 +206,7 @@ private parseDeviceInfo(bodyXml){
 	sendEvent(name: "userdevicename",value: uName.text())
 
 	def power = bodyXml.'power-mode'
-	sendEvent(name: "switch", value: power.text()=="PowerOn" ? "on" : "off", displayed: false)
+	sendEvent(name: "switch", value: power.text()=="PowerOn" ? "on" : "off", displayed: false)   
 	
 	def version = bodyXml.'software-version'
 	def build = bodyXml.'software-build'
@@ -237,20 +232,17 @@ private rokuAppAction() {
 	String host = getHostAddress()
 	def hubAction = new physicalgraph.device.HubAction(
 		"""GET /query/apps HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
-		physicalgraph.device.Protocol.LAN,host)
+		physicalgraph.device.Protocol.LAN, host)
 	sendHubCommand(hubAction)
 }
 
 private parseApps(xmlBody) {
 	def channelCount = xmlBody.'app'.size();
-	//Update Channel Tile Value.
-	sendEvent(name: "channels",value: "Channels (${channelCount})")
-	//Create Activities Event.
+	// Update Channel Tile Value.
+	sendEvent(name: "channels", value: "Channels (${channelCount})")
+	// Create Activities Event.
 	return createEvent(
-		name:"activities",
-		value : channelCount,
-		description:description,
-		isStateChange:true);
+		name: "activities", value : channelCount, description: description, isStateChange: true);
 }
 
 /*** rokuActiveAppAction -> Parse -> parseActiveApp
@@ -291,27 +283,24 @@ private rokuActiveAppAction() {
 		physicalgraph.device.Protocol.LAN, host)
 	sendHubCommand(hubAction)
 }
+
 private parseActiveApp(body){
 	def currentAppId = device.currentValue("activeAppId")
 	def newAppName = body.app
 	def newAppId = body.app.@id
 	def eventToFire
-	if(newAppId){
-	 if((!currentAppId) || (newAppId.text().compareTo(currentAppId) != 0)) {
-			log.debug("activeAppHandler App Update ${currentAppId} -> ${newAppId.text()}")
-			//Update the activeAppId Attribute 
-			sendEvent(name: "activeAppId",value: newAppId.text())
-			//Update the trackDescription Tile 
-			sendEvent(name: "trackDescription",value: newAppName.text())
-			//Update the Status to test background colors.
-			sendEvent(name: "status", value: newAppName.text())
-			//Create the Event to fire at the end of parse method.
-			eventToFire = createEvent(
-				name:"currentActivity", 
-				value : newAppName.text(), 
-				description:description,
-				isStateChange:true);
-		}
+	if (newAppId && (!currentAppId || newAppId.text().compareTo(currentAppId) != 0)) {
+		log.debug("activeAppHandler App Update ${currentAppId} -> ${newAppId.text()}")
+		//Update the activeAppId Attribute 
+		sendEvent(name: "activeAppId",value: newAppId.text())
+        //Update the trackDescription Tile 
+        sendEvent(name: "trackDescription",value: newAppName.text())
+        //Update the Status to test background colors.
+        sendEvent(name: "status", value: newAppName.text())
+        //Create the Event to fire at the end of parse method.
+        eventToFire = createEvent(
+        	name: "currentActivity", value: newAppName.text(), 
+            description: description, isStateChange: true);
 	}
 	return eventToFire;
 }
@@ -332,10 +321,10 @@ private parseActiveApp(body){
 		
 		Use the install command instead for uninstalled channels.
 ***/
-private rokuLaunchAction(String appName, String contentId =null) {
+private rokuLaunchAction(String appName, String contentId=null) {
 	def channelList = device.currentValue("activityList");
 	if(channelList){
-		def appNode = new XmlSlurper().parseText(channelList).children().find{it.text()==appName}
+		def appNode = new XmlSlurper().parseText(channelList).children().find{it.text() == appName}
 		if(appNode){
 			def appId = appNode.@id
 			launchAppId(appId, contentId)
@@ -362,7 +351,7 @@ private rokuLaunchAction(String appName, String contentId =null) {
 def launchAppId(String appId, String contentId =null) {
 	def urlText = "/launch/${appId}?contentId=${contentId}"
 	if(!contentId){
-			urlText = "/launch/${appId}"
+		urlText = "/launch/${appId}"
 	}
 
 	def httpRequest = [
@@ -415,7 +404,7 @@ private rokuKeyPressAppAction(String action) {
 		
 		contentId is optional and might not be supported by the Roku Application.
 ***/
-def startActivityWithContent(String appName,contentId = null){
+def startActivityWithContent(String appName,contentId = null) {
 	log.trace "startActivityWithContent Fired ${appName} - ${contentId}"
 	rokuLaunchAction(appName, contentId)
 
@@ -423,20 +412,12 @@ def startActivityWithContent(String appName,contentId = null){
 	runIn(5, getCurrentActivity)
 }
 
-/*** wakeViaLan
-	Turns the Roku on via wake on lan.
-***/
-def wakeViaLan(){
-	sendHubCommand(new physicalgraph.device.HubAction(
-			"wake on lan ${deviceNetworkId}", physicalgraph.device.Protocol.LAN, null, [:]))
-}
-
 /*** pressKey
 	Act as is a button is pressed on the remote.
 		
 		refer : to rokuKeyPressAppAction for keyValue options.
 ***/
-def pressKey(keyValue){
+def pressKey(keyValue) {
 	rokuKeyPressAppAction(keyValue)
 }
 
@@ -448,6 +429,7 @@ def selectButton() {
 	//Refresh Current Activity after 5 ish seconds 
 	runIn(5, getCurrentActivity)
 }
+
 /*** homeButton
 	Act as if the Home button is pressed on the remote.
 	 
@@ -458,12 +440,14 @@ def homeButton() {
 	//Refresh Current Activity after 5 ish seconds 
 	runIn(5, getCurrentActivity)
 }
+
 /*** nextButton
 	Act as if the Right Arrow button is pressed on the remote.
 ***/
 def nextButton() {
 	rokuKeyPressAppAction("Right")
 }
+
 /*** previousButton
 	Act as if the Right Arrow button is pressed on the remote.
 ***/
@@ -517,6 +501,7 @@ def getCurrentActivity() {
 	log.trace "getCurrentActivity"
 	rokuActiveAppAction(); 
 }
+
 //^^^^^^^^^^^^^^ Media Controller Commands ^^^^^^^^^^^^^^//
 
 private Integer convertHexToInt(hex) {
@@ -524,7 +509,10 @@ private Integer convertHexToInt(hex) {
 }
 
 private String convertHexToIP(hex) {
-	[convertHexToInt(hex[0..1]),convertHexToInt(hex[2..3]),convertHexToInt(hex[4..5]),convertHexToInt(hex[6..7])].join(".")
+	[convertHexToInt(hex[0..1]),
+     convertHexToInt(hex[2..3]),
+     convertHexToInt(hex[4..5]),
+     convertHexToInt(hex[6..7])].join(".")
 }
 
 private getHostAddress() {
