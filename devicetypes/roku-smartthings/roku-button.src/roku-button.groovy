@@ -17,7 +17,7 @@
  *  Date: 2013-05-01
  */
 metadata {
-	definition (name: "Roku Button Tile", namespace: "roku-button ", author: "SmartThings") {
+	definition (name: "Roku Button Tile", namespace: "RokuSmartThings", author: "SmartThings") {
 		capability "Actuator"
 		capability "Switch"
 		capability "Momentary"
