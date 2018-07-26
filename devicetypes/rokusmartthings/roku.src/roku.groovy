@@ -120,21 +120,21 @@ def parse(description) {
     if (msg.body.contains("<device-info>")) {
       eventObj = parseDeviceInfo(msg.xml)
       //Save Message body to deviceInfo Attribute
-      sendEvent(name: "deviceInfo",value: msg.body,isStateChange:true)
+      sendEvent(name: "deviceInfo", value: msg.body, isStateChange:true)
     }
 
     //Handle Currently Active App Requests.
     if (msg.body.contains("<active-app>")) {
       eventObj = parseActiveApp(msg.xml);
       //Save Message body to activeApp Attribute
-      sendEvent(name: "activeApp",value: msg.body,isStateChange:true)
+      sendEvent(name: "activeApp", value: msg.body, isStateChange:true)
     }
 
     //Handle List of Installed App Requests.
     if (msg.body.contains("<apps>")) {
       eventObj = parseApps(msg.xml);
       //Save Message body to activityList Attribute
-      sendEvent(name: "activityList",value: msg.body)
+      sendEvent(name: "activityList", value: msg.body)
     }
   } catch (Throwable t) {
     //results << createEvent(name: "parseError", value: "$t")
@@ -152,7 +152,7 @@ def installed() {
 def refresh() {
   rokuDeviceInfoAction()
   getCurrentActivity(); 
-    getAllActivities()
+  getAllActivities()
 }
 
 /*** rokuDeviceInfoAction -> parse -> parseDeviceInfo

@@ -22,6 +22,10 @@ metadata {
     capability "Switch"
     capability "Momentary"
     capability "Sensor"
+
+    attribute "RokuDeviceID", "String"
+    attribute "CommandType", "String"
+    attribute "CommandValue", "String"
   }
 
   // simulator metadata
@@ -38,6 +42,12 @@ metadata {
     main "switch"
     details "switch"
   }
+}
+
+def installed() {
+  sendEvent(name: "RokuDeviceID", value: getDataValue("rokuID"))
+  sendEvent(name: "CommandType", value: getDataValue("type"))
+  sendEvent(name: "CommandValue", value: getDataValue("value"))
 }
 
 def parse(String description) {}
