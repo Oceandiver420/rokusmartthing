@@ -108,8 +108,7 @@ def initialize() {
   runEvery5Minutes("ssdpDiscover")  // ensures that if the ip changes, the handlers still works
 }
 
-def uninstalled() {
-  unsubscribe()
+def uninstalled() { 
   unschedule()
   state.subscribe = false
   getChildDevices().each {
