@@ -144,14 +144,27 @@ def parse(description) {
 }
 
 def installed() {
+  log.debug 'installed ${getHostAddress()}'
   rokuDeviceInfoAction()
   getCurrentActivity();    
 }
 
 def refresh() {
+  log.debug 'refresh ${getHostAddress()}'
   rokuDeviceInfoAction()
   getCurrentActivity(); 
   getAllActivities()
+}
+
+/***
+  Sync is called by the Roku Manager SmartApp to update the host for this mac address.
+***/
+def sync(host) {
+  def existingHost = getDataValue("host")
+  log.debug 'sync $existingHost -> $host'
+  if (host && host != existingHost) {
+    updateDataValue("host", host)
+  }
 }
 
 /*** rokuDeviceInfoAction -> parse -> parseDeviceInfo
