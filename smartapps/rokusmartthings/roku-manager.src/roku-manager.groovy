@@ -58,9 +58,8 @@ def deviceDiscoveryPage() {
             "specify the name of the device, and then hit next.") {
       def devices = getRokuDevices().values().each {
         def id = rokuKey(it)
-        input(
-          name: id, type: "bool", title: "Roku (${it.host})",
-          required: true, defaultValue: settings[id])
+        input(name: id, type: "bool", title: "Roku (${it.host})",
+              required: true, defaultValue: settings[id])
       }
     }
   }
@@ -190,9 +189,9 @@ def setAvailableDeviceHandlers(d) {
 
   // Special case wake on lan command.
   dhs["WakeViaLan"] = [
-    label: "Wake Via Lan"
-    deviceName: null
-    type: null
+    label: "Wake Via Lan",
+    deviceName: null,
+    type: "WakeViaLan",
     action: d.mac
   ]
   

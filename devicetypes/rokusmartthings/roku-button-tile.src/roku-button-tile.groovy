@@ -78,10 +78,10 @@ def sendRokuCommand() {
   def host = getDataValue("host")
   def urlText
 
-  if (action == "WakeViaLan") {
-    log.debug "WakeViaLan on $host"
+  if (type == "WakeViaLan") {
+    log.debug "WakeViaLan on $host for $action"
     sendHubCommand(new physicalgraph.device.HubAction(
-      "wake on lan ${action}", physicalgraph.device.Protocol.LAN, null, [:]))
+      "wake on lan $action", physicalgraph.device.Protocol.LAN, null, [:]))
     return
   }
 
