@@ -37,7 +37,6 @@ metadata {
     command "previousButton"
     command "selectButton"
     command "startActivityWithContent", ["String","String"]
-    command "wakeViaLan"
   }
 
   tiles(scale: 2) {
@@ -59,10 +58,10 @@ metadata {
 
       tileAttribute("device.trackDescription", key: "MARQUEE") {
         attributeState("default", label:"${currentValue}", backgroundColor:"#00ffff")
-                state "Roku", label:'${currentValue}', backgroundColor:"#6600ff"
-                state "Netflix", label:'${currentValue}', backgroundColor:"#ff0000"
-                state "Play Movies", label:'${currentValue}', backgroundColor:"#ff0000"
-                state "Amazon Video", label:'${currentValue}', backgroundColor:"#6600ff"
+                state "Roku", label:"${currentValue}", backgroundColor:"#6600ff"
+                state "Netflix", label:"${currentValue}", backgroundColor:"#ff0000"
+                state "Play Movies", label:"${currentValue}", backgroundColor:"#ff0000"
+                state "Amazon Video", label:"${currentValue}", backgroundColor:"#6600ff"
       }
     }
 
@@ -73,11 +72,11 @@ metadata {
 
     tiles {
       valueTile("model", "device.model", decoration: "flat", width: 4, height: 1) {
-        state "default", label:'Model : ${currentValue}'
+        state "default", label: "Model : ${currentValue}"
       }
           
       valueTile("userdevicename", "device.userdevicename", decoration: "flat", width: 4, height: 1) {
-        state "default", label:'Name : ${currentValue}'
+        state "default", label: "Name : ${currentValue}"
       }
     }
         
@@ -86,19 +85,19 @@ metadata {
     }
 
     standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: true) {
-      state "on", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#79b821"
-      state "off", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff"
+      state "on", label: "${name}", action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#79b821"
+      state "off", label: "${name}", action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff"
     }
 
     tiles {
       valueTile("softwareVersion", "device.softwareversion", decoration: "flat", width: 4, height: 1) {
-        state "default", label:'Version : ${currentValue}'
+        state "default", label: "Version : ${currentValue}"
       }
       valueTile("deviceId", "device.deviceid", decoration: "flat", width: 4, height: 1) {
-        state "default", label:'ID : ${currentValue}'
+        state "default", label: "ID : ${currentValue}"
       }
       valueTile("channels", "device.channels", decoration: "flat", width: 4, height: 1) {
-        state "default", label:'${currentValue}', action:"mediaController.activities"
+        state "default", label: "${currentValue}", action: "mediaController.activities"
       }
     }
 
@@ -193,10 +192,9 @@ def refresh() {
 private rokuDeviceInfoAction() {
   String host = getHostAddress()
   log.info("rokuDeviceInfoAction ${host}")
-  def hubAction = new physicalgraph.device.HubAction(
+  sendHubCommand(new physicalgraph.device.HubAction(
     """GET /query/device-info HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
-    physicalgraph.device.Protocol.LAN, host)
-  sendHubCommand(hubAction)
+    physicalgraph.device.Protocol.LAN, host))
 }
 
 private parseDeviceInfo(bodyXml){
@@ -276,11 +274,9 @@ private parseApps(xmlBody) {
   </active-app>
 ***/
 private rokuActiveAppAction() {
-  String host = getHostAddress()
-  def hubAction = new physicalgraph.device.HubAction(
+  sendHubCommand(new physicalgraph.device.HubAction(
     """GET /query/active-app HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
-    physicalgraph.device.Protocol.LAN, host)
-  sendHubCommand(hubAction)
+    physicalgraph.device.Protocol.LAN, getHostAddress()))
 }
 
 private parseActiveApp(body){
