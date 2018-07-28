@@ -172,13 +172,13 @@ def parse(description) {
 }
 
 def installed() {
-  log.debug "installed ${getHostAddress()}"
+  log.debug "installed"
   rokuDeviceInfoAction()
   getCurrentActivity();
 }
 
 def refresh() {
-  log.debug "refresh ${getHostAddress()}"
+  log.debug "refresh"
   rokuDeviceInfoAction()
   getCurrentActivity();
   getAllActivities()
@@ -189,7 +189,7 @@ def refresh() {
   address.
 ***/
 def sync(host) {
-  def existingHost = getDataValue("host")
+  String existingHost = getDataValue("host")
   log.debug "sync $existingHost -> $host"
   if (host && host != existingHost) {
     updateDataValue("host", host)
@@ -234,7 +234,7 @@ def sync(host) {
 private rokuDeviceInfoAction() {
   String host = getHostAddress()
   log.info("rokuDeviceInfoAction ${host}")
-  hubAction = new physicalgraph.device.HubAction(
+  def hubAction = new physicalgraph.device.HubAction(
     """GET /query/device-info HTTP/1.1\r\nHOST: $host\r\n\r\n""",
     physicalgraph.device.Protocol.LAN, host)
   sendHubCommand(hubAction)
@@ -275,7 +275,7 @@ private parseDeviceInfo(bodyXml){
   </apps>
 ***/
 private rokuAppAction() {
-  hubAction = new physicalgraph.device.HubAction(
+  def hubAction = new physicalgraph.device.HubAction(
     """GET /query/apps HTTP/1.1\r\nHOST: $host\r\n\r\n""",
     physicalgraph.device.Protocol.LAN, getHostAddress())
   sendHubCommand(hubAction)
