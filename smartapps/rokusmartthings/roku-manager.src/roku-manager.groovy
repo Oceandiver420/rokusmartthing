@@ -12,7 +12,7 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- * This code was originaly based on github.com/MadMouse/SmartThings but has been signficantly rewritten.
+ * This code was originaly based on github.com/MadMouse/SmartThings but has been almost completely rewritten.
  *
  * Notes/Issues/TODOSs:
  * - roku page may not refresh as fast as it should
@@ -29,8 +29,6 @@ definition(
   iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
   iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png")
 
-def urnPlayerLink = "urn:roku-com:device:player:1"
-
 preferences {
   page(name: "deviceDiscoveryPage", nextPage: "createDHPage")
   page(name: "createDHPage")
@@ -40,7 +38,6 @@ def deviceDiscoveryPage() {
   log.debug "deviceDiscoveryPage"
   int refreshCount = !state.refreshCount ? 0 : state.refreshCount as int
   state.refreshCount = refreshCount + 1
-  def refreshInterval = 5
 
   if (!state.subscribe) {
     log.debug "subscribe :: ${refreshCount}"
@@ -52,21 +49,15 @@ def deviceDiscoveryPage() {
     ssdpDiscover()
   }
   
-  // setup.xml request every 5 seconds except on discoveries
-  // if (((refreshCount % 1) == 0) &&
-  //     ((refreshCount % 5) != 0)) {
-  //   log.debug "verifyDevices :: ${refreshCount}"
-  //   verifyDevices()
-  // }
-
   return dynamicPage(name: "deviceDiscoveryPage", title: "Discovery Started!",
-                     nextPage: "createDHPage", refreshInterval: 5, install: false, uninstall: true) {
+                     nextPage: "createDHPage", refreshInterval: 5,
+                     install: false, uninstall: true) {
     section("Please wait while we discover your Roku Devices. " +
             "Discovery can take five minutes or more, so sit back and relax!" +
             "To create device handlers for one or more rokus, " +
             "specify the name of the device, and then hit next.") {
       def devices = getRokuDevices().values().each {
-        def id = rokuEnabledKey(it)
+        def id = rokuKey(it)
         input(
           name: id, type: "bool", title: "Roku (${it.host})",
           required: true, defaultValue: settings[id])
@@ -126,38 +117,25 @@ def uninstalled() {
   state.rokuDevices = [:]
 }
 
-void ssdpDiscover() {
-  log.debug "ssdpDiscover"
-  sendHubCommand(new physicalgraph.device.HubAction(
-    "lan discovery roku:ecp", physicalgraph.device.Protocol.LAN))
-}
-
-void ssdpSubscribe() {
-  log.debug "ssdpSubscribe"
-  subscribe(location, "ssdpTerm.roku:ecp", ssdpHandler)
-  state.subscribe = true
-}
-
-def getRokuDevices() {
-  if (!state.rokuDevices) {
-    state.rokuDevices = [:]
-  }
-  state.rokuDevices
-}
 
 /***
-updateDeviceSelection iterates through the devices sets whether or not they enabled according to
-the current preferences.
+  updateDeviceSelection iterates through the roku devices and update its state
+  based on the current preferences.
 ***/
 def updateDeviceSelection() {
   getRokuDevices().values().each { d ->
-    d.enabled = settings[rokuEnabledKey(d)]
-    if (!d.enabled) { return }
-    setAvailableDeviceHandlers(d)
+    d.enabled = settings[rokuKey(d)]
+    if (d.enabled) {
+      setAvailableDeviceHandlers(d)
+    }
   }
 }
 
-
+/***
+  updateDeviceHandlers iterates through the roku devices and adds/removes device
+  handlers based on the current preferences. If a roku device is disabled, then
+  all of its device handlers are removed.
+***/
 def updateDeviceHandlers() {
   log.debug "updateDeviceHandlers"
   
@@ -172,12 +150,15 @@ def updateDeviceHandlers() {
     d.deviceHandlers.each {nid, dh ->
       def child = getChildDevice(nid)
       if (!dh.deviceName && child) {
+        // no name means it was disabled.
         log.debug "removing device handler: $nid"
         deleteChildDevice(nid)
       } else if (dh.deviceName && !child) {
         // Create handler.
         log.debug "Creating ${dh.deviceName} (mac: ${d.mac}, host: ${d.host})"
-        if (nid == d.mac) { // main roku device handler is id'ed by the roku's mac.
+
+        // Special case the general roku remote device handler
+        if (nid == d.mac) {
           addChildDevice("RokuSmartThings", "Roku", nid, d.hub,
             ["label": "${dh.deviceName}", "data": ["mac": d.mac, "host": d.host]])
         } else {
@@ -191,24 +172,14 @@ def updateDeviceHandlers() {
 }
 
 
-
-// https://sdkdocs.roku.com/display/sdkdoc/External+Control+API#ExternalControlAPI-KeypressKeyValues
-def remoteKeys() {
-  return ["Wake Via Lan", // this is special cassed in the roku-button-tile dh.
-          "Power On", "Power Off", "Home", "Rev", "Fwd",
-          "Play", "Select", "Left", "Right", "Down", "Up", "Back",
-          "InstantReplay", "Info", "Backspace", "Search", "Enter",
-          "FindRemote", "Volume Down", "Volume Mute", "Volume Up",
-          "Channel Up", "Channel Down", "Input Tuner",  "Input AV1",
-          "Input HDMI1", "Input HDMI2", "Input HDMI3", "Input HDMI4"]
-}
-
 /***
- setAvailableDeviceHandlers - generates a list of available roku buttons.
- If there was an enabled button that is no longer availble, keep it in the list.
- ***/
+  setAvailableDeviceHandlers - generates a list of available roku buttons.
+  If there was an enabled button that is no longer availble (e.g app was removed),
+  it will remain in the list.
+***/
 def setAvailableDeviceHandlers(d) {
-  // List of available device handlers
+  // dhs stores the map of networkID -> deviceHandler objects that are used
+  // to create the preference page and devicehandlers.
   def dhs = [:]
 
   // Special case the general remote device handler.
@@ -217,7 +188,7 @@ def setAvailableDeviceHandlers(d) {
     deviceName: null
   ]
   
-  // Note: enabled is modified via preferences.
+  // Add buttons for keys on the remote.
   remoteKeys().each() {
     def id = it.replaceAll(' ', '')
     dhs[id] = [
@@ -228,6 +199,7 @@ def setAvailableDeviceHandlers(d) {
     ]
   }
 
+  // Add buttons for roku apps.
   d.apps.each() { k, v ->
     dhs[k] = [
       label: v,
@@ -240,8 +212,7 @@ def setAvailableDeviceHandlers(d) {
   // Copy over dhs that are enabled but not in the current activity list.
   def cur_dhs = d.deviceHandlers
   cur_dhs?.each() { k, v ->
-    if (!v.deviceName) { return }
-    dhs[k] = v
+    if (v.deviceName) { dhs[k] = v }
   }
 
   // Set the enabled state based on the preferences
@@ -253,10 +224,13 @@ def setAvailableDeviceHandlers(d) {
   d.deviceHandlers = dhs
 }
 
-def parse(description) {
-  log.trace "parse : " + description
-}
-
+/***
+  ssdpHandler is called when an ssdp event is triggered.
+  It creates a new roku device if one does not exist and update the host
+  (i.e ip:port) of an existing roku device.
+  It will then an async query to get a list of roku apps for this device.
+  These will appear in the user preferences.
+**/
 def ssdpHandler(evt) {
   def newDevice = parseLanMessage(evt.description)
   def host = makeHostAddress(newDevice.networkAddress, newDevice.deviceAddress)
@@ -289,6 +263,10 @@ def ssdpHandler(evt) {
   rokuQueryApps(curDevice)
 }
 
+/***
+  rokuQueryAppsReponse extracts the list of apps from from the response and
+  updates the app list of the correspond rokue device (determined by the mac).
+***/
 void rokuQueryAppsReponse(physicalgraph.device.HubResponse hubResponse) {
   def mac = "${hubResponse.mac}"
   log.debug "rokuQueryAppsReponse for ${mac}"
@@ -304,17 +282,53 @@ void rokuQueryAppsReponse(physicalgraph.device.HubResponse hubResponse) {
   }
 }
 
-// Look up keys
+/*****************************Utility Functions*******************************/
 
-private rokuEnabledKey(d) {
-  "${d.mac}"
+
+/*** Internal storage of the detected roku devices ***/
+private getRokuDevices() {
+  if (!state.rokuDevices) {
+    state.rokuDevices = [:]
+  }
+  state.rokuDevices
 }
 
+/*** Used to look up roku device preference ***/
+private rokuKey(d) {
+  return "${d.mac}"
+}
+
+/*** Used to look up roku device handler preference ***/
 private dhNameKey(d, name) {
-  "${d.mac}:$name"
+  return "${d.mac}:$name"
 }
 
-// Networking functions
+/*** remoteKeys is a list of valid button codes on the roku remote
+  https://sdkdocs.roku.com/display/sdkdoc/External+Control+API#ExternalControlAPI-KeypressKeyValues
+***/
+private remoteKeys() {
+  return ["Wake Via Lan", // this is special cassed in the roku-button-tile dh.
+          "Power On", "Power Off", "Home", "Rev", "Fwd",
+          "Play", "Select", "Left", "Right", "Down", "Up", "Back",
+          "InstantReplay", "Info", "Backspace", "Search", "Enter",
+          "FindRemote", "Volume Down", "Volume Mute", "Volume Up",
+          "Channel Up", "Channel Down", "Input Tuner",  "Input AV1",
+          "Input HDMI1", "Input HDMI2", "Input HDMI3", "Input HDMI4"]
+}
+
+/******************************Network Functions*******************************/
+
+void ssdpDiscover() {
+  log.debug "ssdpDiscover"
+  sendHubCommand(new physicalgraph.device.HubAction(
+    "lan discovery roku:ecp", physicalgraph.device.Protocol.LAN))
+}
+
+void ssdpSubscribe() {
+  log.debug "ssdpSubscribe"
+  subscribe(location, "ssdpTerm.roku:ecp", ssdpHandler)
+  state.subscribe = true
+}
 
 private rokuQueryApps(d) {
   sendHubCommand(new physicalgraph.device.HubAction(
@@ -323,20 +337,16 @@ private rokuQueryApps(d) {
 }
 
 private makeHostAddress(ipHex, portHex) {
-  def existingIp = convertHexToIP(ipHex)
-  def existingPort = convertHexToInt(portHex)
-  return existingIp + ":" + existingPort
+  return convertHexToIP(ipHex) + ":" + convertHexToInt(portHex)
 }
 
 private Integer convertHexToInt(hex) {
-  Integer.parseInt(hex,16)
+  return Integer.parseInt(hex,16)
 }
 
 private String convertHexToIP(hex) {
-  [convertHexToInt(hex[0..1]),
-   convertHexToInt(hex[2..3]),
-   convertHexToInt(hex[4..5]),
-   convertHexToInt(hex[6..7])].join(".")
+  return [convertHexToInt(hex[0..1]), convertHexToInt(hex[2..3]),
+          convertHexToInt(hex[4..5]), convertHexToInt(hex[6..7])].join(".")
 }
 
 private hex(value, width=2) {
@@ -344,5 +354,5 @@ private hex(value, width=2) {
   while (s.size() < width) {
     s = "0" + s
   }
-  s
+  return s
 }
