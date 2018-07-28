@@ -230,11 +230,9 @@ private parseDeviceInfo(bodyXml){
   </apps>
 ***/
 private rokuAppAction() {
-  String host = getHostAddress()
-  def hubAction = new physicalgraph.device.HubAction(
+  sendHubCommand(new physicalgraph.device.HubAction(
     """GET /query/apps HTTP/1.1\r\nHOST: $host\r\n\r\n""", 
-    physicalgraph.device.Protocol.LAN, host)
-  sendHubCommand(hubAction)
+    physicalgraph.device.Protocol.LAN, getHostAddress()))
 }
 
 private parseApps(xmlBody) {
@@ -294,43 +292,31 @@ private parseActiveApp(body){
     log.debug("activeAppHandler App Update ${currentAppId} -> ${newAppId.text()}")
     //Update the activeAppId Attribute 
     sendEvent(name: "activeAppId",value: newAppId.text())
-        //Update the trackDescription Tile 
-        sendEvent(name: "trackDescription",value: newAppName.text())
-        //Update the Status to test background colors.
-        sendEvent(name: "status", value: newAppName.text())
-        //Create the Event to fire at the end of parse method.
-        eventToFire = createEvent(
-          name: "currentActivity", value: newAppName.text(), 
-            description: description, isStateChange: true);
+    //Update the trackDescription Tile 
+    sendEvent(name: "trackDescription",value: newAppName.text())
+    //Update the Status to test background colors.
+    sendEvent(name: "status", value: newAppName.text())
+    //Create the Event to fire at the end of parse method.
+    eventToFire = createEvent(
+      name: "currentActivity", value: newAppName.text(), 
+      description: description, isStateChange: true);
   }
   return eventToFire;
 }
 
 /*** rokuLaunchAction
   Launches the channel identified by appName and if the Application supports contentId it will start the content. 
-    
-    Eg Start Youtube Video
-    http://<ip address>:8060/launch/837?contentID=aZtNi6QmA1Y
-    
-    You can follow the appID with a question mark and a list of URL parameters to be sent to the 
-    application as an associative array, and passed to the RunUserInterface() or Main() entry point. 
-    
-    This command is sent using an HTTP POST with no body.
-  
-    The launch command should not be used to implement deep-linking to an uninstalled channel, 
-    because it will fail to launch uninstalled channels. 
-    
-    Use the install command instead for uninstalled channels.
 ***/
 private rokuLaunchAction(String appName, String contentId=null) {
   def channelList = device.currentValue("activityList");
   if(channelList){
     def appNode = new XmlSlurper().parseText(channelList).children().find{it.text() == appName}
     if(appNode){
-      def appId = appNode.@id
-      launchAppId(appId, contentId)
+      launchAppId(appNode.@id, contentId)
+      return
     }
   }
+  log.warn("Unable to launch $appName (num channels: ${channelList.size()}")
 }
 
 /*** launchAppId
@@ -398,16 +384,6 @@ private rokuKeyPressAppAction(String action) {
   ]
   def hubAction = new physicalgraph.device.HubAction(httpRequest)
   sendHubCommand(hubAction)
-}
-//-------------- Custom Commands --------------//
-
-
-/*** wakeViaLan
-  Turns the Roku on via wake on lan.
-***/
-def wakeViaLan(){
-  sendHubCommand(new physicalgraph.device.HubAction(
-      "wake on lan ${deviceNetworkId}", physicalgraph.device.Protocol.LAN, null, [:]))
 }
 
 /*** startActivityWithContent
@@ -513,35 +489,7 @@ def getCurrentActivity() {
   rokuActiveAppAction(); 
 }
 
-//^^^^^^^^^^^^^^ Media Controller Commands ^^^^^^^^^^^^^^//
-
-private Integer convertHexToInt(hex) {
-  Integer.parseInt(hex,16)
-}
-
-private String convertHexToIP(hex) {
-  [convertHexToInt(hex[0..1]),
-     convertHexToInt(hex[2..3]),
-     convertHexToInt(hex[4..5]),
-     convertHexToInt(hex[6..7])].join(".")
-}
-
+//^^^^^^^^^^^^^^ Data accessors ^^^^^^^^^^^^^^//
 private getHostAddress() {
-  def existingIp = convertHexToIP(getDataValue("ip"))
-  def existingPort = convertHexToInt(getDataValue("port"))
-  return existingIp + ":" + existingPort
-}
-
-private dniFromUri(uri) {
-  def segs = uri.replaceAll(/http:\/\/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+)\/.+/,'$1').split(":")
-  def nums = segs[0].split("\\.")
-  (nums.collect{hex(it.toInteger())}.join('') + ':' + hex(segs[-1].toInteger(),4)).toUpperCase()
-}
-
-private hex(value, width=2) {
-  def s = new BigInteger(Math.round(value).toString()).toString(16)
-  while (s.size() < width) {
-    s = "0" + s
-  }
-  s
+  return getDataValue("host")
 }

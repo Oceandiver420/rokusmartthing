@@ -22,10 +22,6 @@ metadata {
     capability "Switch"
     capability "Momentary"
     capability "Sensor"
-
-    attribute "RokuDeviceID", "String"
-    attribute "CommandType", "String"
-    attribute "CommandValue", "String"
   }
 
   // simulator metadata
@@ -44,24 +40,71 @@ metadata {
   }
 }
 
-def installed() {
-  sendEvent(name: "RokuDeviceID", value: getDataValue("rokuID"))
-  sendEvent(name: "CommandType", value: getDataValue("type"))
-  sendEvent(name: "CommandValue", value: getDataValue("value"))
+/***
+  Sync is called by the SmartApp to update the host for this mac address.
+***/
+def sync(host) {
+  def existingHost = getDataValue("host")
+  if (host && host != existingHost) {
+    updateDataValue("host", host)
+  }
 }
+
 
 def parse(String description) {}
 
 def push() {
-  sendEvent(name: "switch", value: "on", isStateChange: true, displayed: false)
-  sendEvent(name: "switch", value: "off", isStateChange: true, displayed: false)
   sendEvent(name: "momentary", value: "pushed", isStateChange: true)
+  sendRokuCommand()
 }
 
 def on() {
-  push()
+  sendEvent(name: "switch", value: "on", isStateChange: true, displayed: false)
+  sendRokuCommand()
 }
 
 def off() {
-  push()
+  sendEvent(name: "switch", value: "off", isStateChange: true, displayed: false)
+  sendRokuCommand()
+}
+
+/***
+  See ../roku.src/roku.groovy for details.
+***/
+def sendRokuCommand() {
+  def type = getDataValue("type")
+  def action = getDataValue("action")
+  def contentId = getDataValue("contentId")
+  def host = getDataValue("host")
+
+  def urlText
+  if (action == "WakeViaLan") {
+    log.debug "WakeViaLan on $host"
+    sendHubCommand(new physicalgraph.device.HubAction(
+      "wake on lan ${deviceNetworkId}", physicalgraph.device.Protocol.LAN, null, [:]))
+    return
+  }
+
+  if (type == "key") {
+    urlText = "/keypress/" + action
+  } else if (type == "app") {
+    urlText = "/launch/${action}"
+    if (contentId) {
+      urlText += "?contentId=${contentId}"
+    }
+  } else{
+    log.error "Unknown type: $type (host: $host, action: $action, contentId: $contentId)"
+    return
+  }
+
+  def httpRequest = [
+    method: "POST",
+    path: urlText,
+    headers: [
+      HOST: host,
+      Accept: "*/*",
+    ]
+  ]
+  log.debug httpRequest
+  sendHubCommand(new physicalgraph.device.HubAction(httpRequest))
 }
