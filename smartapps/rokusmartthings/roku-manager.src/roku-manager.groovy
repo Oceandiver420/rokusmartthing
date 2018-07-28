@@ -77,10 +77,9 @@ def createDHPage() {
       found = true
       section("To create a button for 'Roku (${d.host})', just give it a name.") {
         d.deviceHandlers.each() { k, v ->
-          def id = dhNameKey(d, k)
           input(
-            name: id, type: "text", title: "${v.label} Suggested: 'Roku ${v.label}'",
-            required: false, defaultValue: settings[id])
+            name: k, type: "text", title: "${v.label} Suggested: 'Roku ${v.label}'",
+            required: false, defaultValue: settings[k])
         }
       }
     }
@@ -160,7 +159,7 @@ def updateDeviceHandlers() {
         log.debug "Creating ${dh.deviceName} (mac: ${d.mac}, host: ${d.host})"
 
         // Special case the general roku remote device handler
-        if (nid == d.mac) {
+        if (nid == dhNameKey(d, "Remote")) {
           addChildDevice("RokuSmartThings", "Roku", nid, d.hub,
             ["label": "${dh.deviceName}", "data": ["mac": d.mac, "host": d.host]])
         } else {
@@ -185,7 +184,7 @@ def setAvailableDeviceHandlers(d) {
   def dhs = [:]
 
   // Special case the general remote device handler.
-  dhs[d.mac] = [
+  dhs[dhNameKey(d, "Remote")] = [
     label: "Remote",
     deviceName: null
   ]
@@ -310,7 +309,7 @@ private rokuKey(d) {
 
 /*** Used to look up roku device handler preference ***/
 private dhNameKey(d, name) {
-  return "${d.mac}:$name"
+  return "${d.mac}-$name"
 }
 
 /*** remoteKeys is a list of valid button codes on the roku remote
