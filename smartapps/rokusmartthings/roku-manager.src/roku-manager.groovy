@@ -54,7 +54,7 @@ def deviceDiscoveryPage() {
                      install: false, uninstall: true) {
     section("Please wait while we discover your Roku Devices. " +
             "Discovery can take five minutes or more, so sit back and relax!" +
-            "To create device handlers for one or more rokus, " +
+            " To create device handlers for one or more rokus, " +
             "specify the name of the device, and then hit next.") {
       def devices = getRokuDevices().values().each {
         def id = rokuKey(it)
