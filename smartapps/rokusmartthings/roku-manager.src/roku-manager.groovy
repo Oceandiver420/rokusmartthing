@@ -259,7 +259,7 @@ def parse(description) {
 
 def ssdpHandler(evt) {
   def newDevice = parseLanMessage(evt.description)
-  newDevice.host = makeHostAddress(newDevice.networkAddress, newDevice.deviceAddress)
+  def host = makeHostAddress(newDevice.networkAddress, newDevice.deviceAddress)
 
   def devices = getRokuDevices()
   def curDevice = devices.get(newDevice.mac, null)
@@ -272,13 +272,14 @@ def ssdpHandler(evt) {
                   "host": host,
                   "enabled": false,
                   "apps": [:],
-                  "deviceHandlers": [:]]
+                  "deviceHandlers": [:],
+                  "host": host]
     devices[newDevice.mac] = newDevice
     curDevice = newDevice
-  } else if (curDevice.host != newDevice.host) {
+  } else if (curDevice.host != host) {
     // Host changed, so update device handlers.
-    log.debug "Updating ${curDevice.mac} with a new host (${device.host} -> ${newDevice.host}"
-    curDevice.host = newDevice.host
+    log.debug "Updating ${curDevice.mac} with a new host (${curDevice.host} -> ${host}"
+    curDevice.host = host
     // Ensure that all the device handlers use this host.
     curDevice.deviceHandlers.keys().each() { nid ->
       getChildDevice(nid).sync(host)
