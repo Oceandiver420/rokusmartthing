@@ -140,8 +140,11 @@ def updateDeviceHandlers() {
   
   getRokuDevices().values().each { d ->
     if (!d.enabled) {
-      d.deviceHandlers.keys().each {
-        deleteChildDevice(it)
+      d.deviceHandlers.each { k, dh ->
+        if (dh.deviceName) {
+          log.debug "Deleting $k $dh"
+          deleteChildDevice(k)
+        }
       }
       return
     }
@@ -188,7 +191,7 @@ def setAvailableDeviceHandlers(d) {
   ]
 
   // Special case wake on lan command.
-  dhs["WakeViaLan"] = [
+  dhs[dhNameKey(d, "WakeViaLan")] = [
     label: "Wake Via Lan",
     deviceName: null,
     type: "WakeViaLan",
@@ -198,7 +201,7 @@ def setAvailableDeviceHandlers(d) {
   // Add buttons for keys on the remote.
   remoteKeys().each() {
     def id = it.replaceAll(' ', '')
-    dhs[id] = [
+    dhs[dhNameKey(d, id)] = [
       label: it,
       type: "key",
       deviceName: null,
@@ -208,7 +211,7 @@ def setAvailableDeviceHandlers(d) {
 
   // Add buttons for roku apps.
   d.apps.each() { k, v ->
-    dhs[k] = [
+    dhs[dhNameKey(d, k)] = [
       label: v,
       type: "app",
       deviceName: null,
@@ -224,7 +227,7 @@ def setAvailableDeviceHandlers(d) {
 
   // Set the enabled state based on the preferences
   dhs.each() { k, v ->
-    v.deviceName = settings[dhNameKey(d, k)]
+    v.deviceName = settings[k]
   }
 
   // update the button list.
