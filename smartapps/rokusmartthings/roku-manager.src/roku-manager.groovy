@@ -1,5 +1,5 @@
 /**
- *  Roku Device Manager
+ *  Roku Manager
  *
  *  Copyright 2018 Steven Feldman
  *
@@ -19,7 +19,7 @@
  */
 
 definition(
-  name: "Roku Device Manager",
+  name: "Roku Manager",
   namespace: "RokuSmartThings",
   author: "Steven Feldman",
   description: "Manage Roku Devices",
