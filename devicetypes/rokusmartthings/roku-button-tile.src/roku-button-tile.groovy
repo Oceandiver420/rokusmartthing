@@ -10,11 +10,11 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *  Momentary Button Tile
+ *  Momentary Button Tile that sends commands to a roku device.
  *
- *  Author: SmartThings
+ *  Author: Steven Feldman
  *
- *  Date: 2013-05-01
+ *  Date: 2018-07-27
  */
 metadata {
   definition (name: "Roku Button Tile", namespace: "RokuSmartThings", author: "SmartThings") {
@@ -41,7 +41,7 @@ metadata {
 }
 
 /***
-  Sync is called by the SmartApp to update the host for this mac address.
+  Sync is called by the Roku Manager SmartApp to update the host for this mac address.
 ***/
 def sync(host) {
   def existingHost = getDataValue("host")
@@ -76,12 +76,12 @@ def sendRokuCommand() {
   def action = getDataValue("action")
   def contentId = getDataValue("contentId")
   def host = getDataValue("host")
-
   def urlText
+
   if (action == "WakeViaLan") {
     log.debug "WakeViaLan on $host"
     sendHubCommand(new physicalgraph.device.HubAction(
-      "wake on lan ${deviceNetworkId}", physicalgraph.device.Protocol.LAN, null, [:]))
+      "wake on lan ${action}", physicalgraph.device.Protocol.LAN, null, [:]))
     return
   }
 

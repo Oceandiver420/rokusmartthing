@@ -53,8 +53,8 @@ def deviceDiscoveryPage() {
                      nextPage: "createDHPage", refreshInterval: 5,
                      install: false, uninstall: true) {
     section("Please wait while we discover your Roku Devices. " +
-            "Discovery can take five minutes or more, so sit back and relax!" +
-            " To create device handlers for one or more rokus, " +
+            "Discovery can take five minutes or more, so sit back and relax! " +
+            "To create device handlers for one or more rokus, " +
             "specify the name of the device, and then hit next.") {
       def devices = getRokuDevices().values().each {
         def id = rokuKey(it)
@@ -187,6 +187,14 @@ def setAvailableDeviceHandlers(d) {
     label: "Remote",
     deviceName: null
   ]
+
+  // Special case wake on lan command.
+  dhs["WakeViaLan"] = [
+    label: "Wake Via Lan"
+    deviceName: null
+    type: null
+    action: d.mac
+  ]
   
   // Add buttons for keys on the remote.
   remoteKeys().each() {
@@ -307,8 +315,7 @@ private dhNameKey(d, name) {
   https://sdkdocs.roku.com/display/sdkdoc/External+Control+API#ExternalControlAPI-KeypressKeyValues
 ***/
 private remoteKeys() {
-  return ["Wake Via Lan", // this is special cassed in the roku-button-tile dh.
-          "Power On", "Power Off", "Home", "Rev", "Fwd",
+  return ["Power On", "Power Off", "Home", "Rev", "Fwd",
           "Play", "Select", "Left", "Right", "Down", "Up", "Back",
           "InstantReplay", "Info", "Backspace", "Search", "Enter",
           "FindRemote", "Volume Down", "Volume Mute", "Volume Up",
