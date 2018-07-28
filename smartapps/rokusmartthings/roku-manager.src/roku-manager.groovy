@@ -109,6 +109,9 @@ def initialize() {
 }
 
 def uninstalled() {
+  unsubscribe()
+  unschedule()
+  state.subscribe = false
   getChildDevices().each {
     deleteChildDevice(it.deviceNetworkId)
   }
