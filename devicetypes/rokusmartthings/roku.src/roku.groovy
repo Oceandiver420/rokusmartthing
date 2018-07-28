@@ -43,7 +43,7 @@ metadata {
 
   tiles(scale: 2) {
     multiAttributeTile(
-      name: "main", type: "mediaPlayer", width: 6, height: 3,
+      name: "main", type: "generic", width: 6, height: 3,
       canChangeIcon: true) {
       tileAttribute("device.status", key: "PRIMARY_CONTROL") {
         attributeState("default", action: "selectButton")
