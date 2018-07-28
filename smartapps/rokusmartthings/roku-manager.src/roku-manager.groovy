@@ -43,12 +43,12 @@ def deviceDiscoveryPage() {
     log.debug "subscribe :: ${refreshCount}"
     ssdpSubscribe();
   }
-  
+
   // ssdp request every 25 seconds
   if ((refreshCount % 5) == 0) {
     ssdpDiscover()
   }
-  
+
   return dynamicPage(name: "deviceDiscoveryPage", title: "Discovery Started!",
                      nextPage: "createDHPage", refreshInterval: 5,
                      install: false, uninstall: true) {
@@ -108,7 +108,7 @@ def initialize() {
   runEvery5Minutes("ssdpDiscover")  // ensures that if the ip changes, the handlers still works
 }
 
-def uninstalled() { 
+def uninstalled() {
   unschedule()
   state.subscribe = false
   getChildDevices().each {
@@ -138,7 +138,7 @@ def updateDeviceSelection() {
 ***/
 def updateDeviceHandlers() {
   log.debug "updateDeviceHandlers"
-  
+
   getRokuDevices().values().each { d ->
     if (!d.enabled) {
       d.deviceHandlers.each { k, dh ->
@@ -170,7 +170,7 @@ def updateDeviceHandlers() {
              "data": ["type": dh.type, "action": dh.action, "host": d.host]])
         }
       }
-    }    
+    }
   }
 }
 
@@ -198,7 +198,7 @@ def setAvailableDeviceHandlers(d) {
     type: "WakeViaLan",
     action: d.mac
   ]
-  
+
   // Add buttons for keys on the remote.
   remoteKeys().each() {
     def id = it.replaceAll(' ', '')
@@ -248,7 +248,7 @@ def ssdpHandler(evt) {
 
   def devices = getRokuDevices()
   def curDevice = devices.get(newDevice.mac, null)
-  
+
   if (!curDevice) {
     log.debug "Adding new network device: (ssdpUSN ${ssdpUSN}: ${newDevice})"
     newDevice << ["name": newDevice.name ?: "Roku - ${newDevice.mac}",
@@ -342,7 +342,7 @@ void ssdpSubscribe() {
 
 private rokuQueryApps(d) {
   sendHubCommand(new physicalgraph.device.HubAction(
-    """GET /query/apps HTTP/1.1\r\nHOST: ${d.host}\r\n\r\n""", 
+    """GET /query/apps HTTP/1.1\r\nHOST: ${d.host}\r\n\r\n""",
     physicalgraph.device.Protocol.LAN, d.host, [callback: rokuQueryAppsReponse]))
 }
 

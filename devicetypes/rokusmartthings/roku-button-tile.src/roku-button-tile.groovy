@@ -33,7 +33,7 @@ metadata {
       tileAttribute("device.switch", key: "PRIMARY_CONTROL") {
         attributeState("off", label: 'Push', action: "momentary.push", backgroundColor: "#ffffff", nextState: "on")
         attributeState("on", label: 'Push', action: "momentary.push", backgroundColor: "#00a0dc")
-      } 
+      }
     }
     main "switch"
     details "switch"
@@ -49,7 +49,6 @@ def sync(host) {
     updateDataValue("host", host)
   }
 }
-
 
 def parse(String description) {}
 

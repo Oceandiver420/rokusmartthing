@@ -14,14 +14,12 @@ This repo contains various bits of code for controlling Roku devices via smartth
   - RokuSmartThings : Roku
   - RokuSmartThings : Roku Button Tile
 
-
 # Using
 
 1. Open the 'Roku Manger' SmartApp
 2. Enable the Roku devices that you want.
 3. On the next page, add device names for the buttons that you would like to create.
 
- 
 # Future Work
 
 - add support for creating push buttons that execute a series of steps.
