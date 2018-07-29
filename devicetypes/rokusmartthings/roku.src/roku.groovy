@@ -50,7 +50,7 @@ metadata {
       }
       tileAttribute("device.status", key: "MEDIA_STATUS") {
         attributeState(
-          "default", action: "selectButton", label: "${currentValue}")
+          "default", action: "selectButton", label: '${currentValue}')
       }
 
       tileAttribute("device.status", key: "PREVIOUS_TRACK") {
@@ -63,15 +63,15 @@ metadata {
 
       tileAttribute("device.trackDescription", key: "MARQUEE") {
         attributeState(
-          "default", label: "${currentValue}", backgroundColor: "#00ffff")
+          "default", label: '${currentValue}', backgroundColor: "#00ffff")
         state(
-          "Roku", label: "${currentValue}", backgroundColor: "#6600ff")
+          "Roku", label: '${currentValue}', backgroundColor: "#6600ff")
         state(
-          "Netflix", label: "${currentValue}", backgroundColor: "#ff0000")
+          "Netflix", label: '${currentValue}', backgroundColor: "#ff0000")
         state(
-          "Play Movies", label: "${currentValue}", backgroundColor: "#ff0000")
+          "Play Movies", label: '${currentValue}', backgroundColor: "#ff0000")
         state(
-          "Amazon Video", label: "${currentValue}", backgroundColor: "#6600ff")
+          "Amazon Video", label: '${currentValue}', backgroundColor: "#6600ff")
       }
     }
 
@@ -79,35 +79,35 @@ metadata {
       "refresh", "device.status",  width: 2, height: 2, inactiveLabel: false,
       decoration: "flat") {
       state(
-        "default", label: "", action: "refresh.refresh",
+        "default", label: '', action: "refresh.refresh",
         icon: "st.secondary.refresh", backgroundColor: "#ffffff")
     }
 
     tiles {
       valueTile(
         "model", "device.model", decoration: "flat", width: 4, height: 1) {
-        state "default", label: "Model : ${currentValue}"
+        state "default", label: 'Model: ${currentValue}'
       }
 
       valueTile(
         "userdevicename", "device.userdevicename", decoration: "flat", width: 4,
         height: 1) {
-        state "default", label: "Name : ${currentValue}"
+        state "default", label: 'Name: ${currentValue}'
       }
     }
 
     standardTile(
       "homeButton", "device.homeButton",  width: 2, height: 2,
       inactiveLabel: false, decoration: "flat") {
-      state("default", label: "", action: "homeButton", icon: "st.Home.home2",
+      state("default", label: '', action: "homeButton", icon: "st.Home.home2",
         backgroundColor: "#ffffff")
     }
 
     standardTile(
       "switch", "device.switch", width: 2, height: 2, canChangeIcon: true) {
-      state("on", label: "${name}", action: "switch.off",
+      state("on", label: '${name}', action: "switch.off",
         icon: "st.switches.switch.on", backgroundColor: "#79b821")
-      state("off", label: "${name}", action: "switch.on",
+      state("off", label: '${name}', action: "switch.on",
         icon: "st.switches.switch.off", backgroundColor: "#ffffff")
     }
 
@@ -115,16 +115,16 @@ metadata {
       valueTile(
         "softwareVersion", "device.softwareversion", decoration: "flat",
         width: 4, height: 1) {
-        state("default", label: "Version : ${currentValue}")
+        state("default", label: 'Version: ${currentValue}')
       }
       valueTile(
         "deviceId", "device.deviceid", decoration: "flat",width: 4, height: 1) {
-        state("default", label: "ID : ${currentValue}")
+        state("default", label: 'ID: ${currentValue}')
       }
       valueTile(
         "channels", "device.channels", decoration: "flat", width: 4, height: 1) {
         state(
-          "default", label: "${currentValue}", action: "mediaController.activities")
+          "default", label: '${currentValue}', action: "mediaController.activities")
       }
     }
 
@@ -134,17 +134,23 @@ metadata {
   }
 }
 
-// parse events into attributes
-def parse(description) {
-  def msg = parseLanMessage(description)
+def parse(String description) {
+  log.debug "parse: $description"
+}
+
+// rokuReply events into attributes
+def rokuReply(physicalgraph.device.HubResponse msg) {
+  log.debug "rokuReply"
   def eventObj
   if(!msg.xml){
+    log.debug "parse: no xml"
     return eventObj
   }
+
   try {
     //Handle Device Info Requests.
     if (msg.body.contains("<device-info>")) {
-      eventObj = parseDeviceInfo(msg.xml)
+      eventObj = parseDeviceInfo(msg.xml);
       //Save Message body to deviceInfo Attribute
       sendEvent(name: "deviceInfo", value: msg.body, isStateChange: true)
     }
@@ -160,7 +166,7 @@ def parse(description) {
     if (msg.body.contains("<apps>")) {
       eventObj = parseApps(msg.xml);
       //Save Message body to activityList Attribute
-      sendEvent(name: "activityList", value: msg.body)
+      sendEvent(name: "activityList", value: msg.body, isStateChange: true)
     }
   } catch (Throwable t) {
     //results << createEvent(name: "parseError", value: "$t")
@@ -232,32 +238,27 @@ def sync(host) {
   </device-info>
 ***/
 private rokuDeviceInfoAction() {
-  String host = getHostAddress()
-  log.info("rokuDeviceInfoAction ${host}")
-  def hubAction = new physicalgraph.device.HubAction(
-    """GET /query/device-info HTTP/1.1\r\nHOST: $host\r\n\r\n""",
-    physicalgraph.device.Protocol.LAN, host)
-  sendHubCommand(hubAction)
+  rokuGet("/query/device-info")
 }
 
 private parseDeviceInfo(bodyXml){
+  log.debug "parseDeviceInfo"
   def model = bodyXml.'model-name'
-  sendEvent(name: "model",value: model.text())
+  sendEvent(name: "model", value: model.text())
 
   def uName = bodyXml.'user-device-name'
-  sendEvent(name: "userdevicename",value: uName.text())
+  sendEvent(name: "userdevicename", value: uName.text())
 
   def power = bodyXml.'power-mode'
-  sendEvent(
-    name: "switch", value: power.text()=="PowerOn" ? "on" : "off",
-    displayed: false)
+  sendEvent(name: "switch", value: power.text()=="PowerOn" ? "on" : "off")
 
   def version = bodyXml.'software-version'
   def build = bodyXml.'software-build'
   sendEvent(name: "softwareversion", value: "${version.text()}-${build.text()}")
 
-  def deviecId = bodyXml.'device-id'
-  sendEvent(name: "deviceid", value: "${deviecId.text()}")
+  def deviceId = bodyXml.'device-id'
+  sendEvent(name: "deviceid", value: "${deviceId.text()}")
+
   return createEvent(
     name: "activities", value: channelCount, description: description,
     isStateChange: true)
@@ -275,13 +276,11 @@ private parseDeviceInfo(bodyXml){
   </apps>
 ***/
 private rokuAppAction() {
-  def hubAction = new physicalgraph.device.HubAction(
-    """GET /query/apps HTTP/1.1\r\nHOST: $host\r\n\r\n""",
-    physicalgraph.device.Protocol.LAN, getHostAddress())
-  sendHubCommand(hubAction)
+  rokuGet("/query/apps")
 }
 
 private parseApps(xmlBody) {
+  log.debug "parseApps"
   def channelCount = xmlBody.'app'.size();
   // Update Channel Tile Value.
   sendEvent(name: "channels", value: "Channels (${channelCount})")
@@ -325,13 +324,11 @@ private parseApps(xmlBody) {
   </active-app>
 ***/
 private rokuActiveAppAction() {
-  def hubAction = new physicalgraph.device.HubAction(
-    """GET /query/active-app HTTP/1.1\r\nHOST: $host\r\n\r\n""",
-    physicalgraph.device.Protocol.LAN, getHostAddress())
-  sendHubCommand(hubAction)
+  rokuGet("/query/active-app")
 }
 
 private parseActiveApp(body){
+  log.debug "parseActiveApp"
   def currentAppId = device.currentValue("activeAppId")
   def newAppName = body.app
   def newAppId = body.app.@id
@@ -547,4 +544,13 @@ def getCurrentActivity() {
 //^^^^^^^^^^^^^^ Data accessors ^^^^^^^^^^^^^^//
 private getHostAddress() {
   return getDataValue("host")
+}
+
+def rokuGet(path) {
+  String host = getHostAddress()
+  log.debug "rokuGet ${host}${path}"
+  def hubAction = new physicalgraph.device.HubAction(
+    """GET ${path} HTTP/1.1\r\nHOST: ${host}\r\n\r\n""",
+    physicalgraph.device.Protocol.LAN, host, [callback: rokuReply])
+  sendHubCommand(hubAction)
 }
