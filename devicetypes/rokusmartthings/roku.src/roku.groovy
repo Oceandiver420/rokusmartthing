@@ -43,7 +43,7 @@ metadata {
 
   tiles(scale: 2) {
     multiAttributeTile(
-      name: "main", type: "generic", width: 6, height: 3,
+      name: "main", type: "mediaPlayer", width: 6, height: 3,
       canChangeIcon: true) {
       tileAttribute("device.status", key: "PRIMARY_CONTROL") {
         attributeState("default", action: "selectButton")
@@ -138,45 +138,6 @@ def parse(String description) {
   log.debug "parse: $description"
 }
 
-// rokuReply events into attributes
-def rokuReply(physicalgraph.device.HubResponse msg) {
-  log.debug "rokuReply"
-  def eventObj
-  if(!msg.xml){
-    log.debug "parse: no xml"
-    return eventObj
-  }
-
-  try {
-    //Handle Device Info Requests.
-    if (msg.body.contains("<device-info>")) {
-      eventObj = parseDeviceInfo(msg.xml);
-      //Save Message body to deviceInfo Attribute
-      sendEvent(name: "deviceInfo", value: msg.body, isStateChange: true)
-    }
-
-    //Handle Currently Active App Requests.
-    if (msg.body.contains("<active-app>")) {
-      eventObj = parseActiveApp(msg.xml);
-      //Save Message body to activeApp Attribute
-      sendEvent(name: "activeApp", value: msg.body, isStateChange: true)
-    }
-
-    //Handle List of Installed App Requests.
-    if (msg.body.contains("<apps>")) {
-      eventObj = parseApps(msg.xml);
-      //Save Message body to activityList Attribute
-      sendEvent(name: "activityList", value: msg.body, isStateChange: true)
-    }
-  } catch (Throwable t) {
-    //results << createEvent(name: "parseError", value: "$t")
-    eventObj = createEvent(
-      name: "parseError", value: "$t", description: description)
-    throw t
-  }
-  return eventObj
-}
-
 def installed() {
   log.debug "installed"
   rokuDeviceInfoAction()
@@ -202,7 +163,7 @@ def sync(host) {
   }
 }
 
-/*** rokuDeviceInfoAction -> parse -> parseDeviceInfo
+/*** rokuDeviceInfoAction -> parseDeviceInfo
   Retrieves device information similar to that returned by roDeviceInfo.
 
   This command is accessed using an HTTP GET.
@@ -238,11 +199,21 @@ def sync(host) {
   </device-info>
 ***/
 private rokuDeviceInfoAction() {
-  rokuGet("/query/device-info")
+  rokuGet("/query/device-info", parseDeviceInfo)
 }
 
-private parseDeviceInfo(bodyXml){
+def parseDeviceInfo(physicalgraph.device.HubResponse msg){
   log.debug "parseDeviceInfo"
+  def bodyXml = msg.xml
+  if(!bodyXml){
+    log.debug "parse: no xml"
+    return
+  }
+
+  // Update anything subscribed to this data set.
+  sendEvent(name: "deviceInfo", value: msg, isStateChange: true)
+
+  // Update tile attributes.
   def model = bodyXml.'model-name'
   sendEvent(name: "model", value: model.text())
 
@@ -276,12 +247,21 @@ private parseDeviceInfo(bodyXml){
   </apps>
 ***/
 private rokuAppAction() {
-  rokuGet("/query/apps")
+  rokuGet("/query/apps", parseApps)
 }
 
-private parseApps(xmlBody) {
+def parseApps(physicalgraph.device.HubResponse msg) {
   log.debug "parseApps"
-  def channelCount = xmlBody.'app'.size();
+  def bodyXml = msg.xml
+  if(!bodyXml){
+    log.debug "parse: no xml"
+    return
+  }
+
+  // Update anything subscribed to this data set.
+  sendEvent(name: "activityList", value: msg, isStateChange: true)
+
+  def channelCount = bodyXml.'app'.size();
   // Update Channel Tile Value.
   sendEvent(name: "channels", value: "Channels (${channelCount})")
   // Create Activities Event.
@@ -290,7 +270,7 @@ private parseApps(xmlBody) {
     isStateChange: true);
 }
 
-/*** rokuActiveAppAction -> Parse -> parseActiveApp
+/*** rokuActiveAppAction -> parseActiveApp
   Get Details of Current App active in the Device.
 
   Returns a child element named 'app' that identifies the active application,
@@ -324,14 +304,24 @@ private parseApps(xmlBody) {
   </active-app>
 ***/
 private rokuActiveAppAction() {
-  rokuGet("/query/active-app")
+  rokuGet("/query/active-app", parseActiveApp)
 }
 
-private parseActiveApp(body){
+def parseActiveApp(physicalgraph.device.HubResponse msg){
   log.debug "parseActiveApp"
+  def bodyXml = msg.xml
+  if(!bodyXml){
+    log.debug "parse: no xml"
+    return
+  }
+
+  // Update anything that subscribes to this data set.
+  sendEvent(name: "activeApp", value: msg, isStateChange: true)
+
+  // Update attributes
   def currentAppId = device.currentValue("activeAppId")
-  def newAppName = body.app
-  def newAppId = body.app.@id
+  def newAppName = bodyXml.app
+  def newAppId = bodyXml.app.@id
   def eventToFire
   if (newAppId &&
       (!currentAppId || newAppId.text().compareTo(currentAppId) != 0)) {
@@ -546,11 +536,11 @@ private getHostAddress() {
   return getDataValue("host")
 }
 
-def rokuGet(path) {
+def rokuGet(path, callback) {
   String host = getHostAddress()
   log.debug "rokuGet ${host}${path}"
   def hubAction = new physicalgraph.device.HubAction(
     """GET ${path} HTTP/1.1\r\nHOST: ${host}\r\n\r\n""",
-    physicalgraph.device.Protocol.LAN, host, [callback: rokuReply])
+    physicalgraph.device.Protocol.LAN, host, [callback: callback])
   sendHubCommand(hubAction)
 }
