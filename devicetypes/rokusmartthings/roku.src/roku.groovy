@@ -31,14 +31,30 @@ metadata {
     attribute "activeApp", "String"
     attribute "activityList", "String"
 
-    command "getAllActivities"
-    command "homeButton"
     command "launchAppId"
-    command "nextButton"
-    command "pressKey", ["String"]
-    command "previousButton"
-    command "selectButton"
+    command "getAllActivities"
     command "startActivityWithContent", ["String","String"]
+    command "pressKey", ["String"]
+
+    // Media
+    command "pause"
+    command "play"
+    command "rewind"
+    command "forward"
+    command "mute"
+    command "unmute"
+    command "pressKeyVolumeDown"
+    command "pressKeyVolumeUp"
+    command "pressKeyHome"
+    command "pressKeyLeft"
+    command "pressKeyRight"
+    command "pressKeyUp"
+    command "pressKeyDown"
+    command "pressKeySelect"
+    command "pressKeyInstantReplay"
+    command "pressKeyInfo"
+    command "pressKeyBack"
+    command "pressKeyEnter"
   }
 
   tiles(scale: 2) {
@@ -46,7 +62,7 @@ metadata {
       name: "main", type: "mediaPlayer", width: 6, height: 3,
       canChangeIcon: true) {
       tileAttribute("device.status", key: "PRIMARY_CONTROL") {
-        attributeState("default", action: "selectButton")
+        attributeState("default", label: '', action: "play")
       }
       tileAttribute("device.status", key: "MEDIA_STATUS") {
         attributeState(
@@ -54,11 +70,16 @@ metadata {
       }
 
       tileAttribute("device.status", key: "PREVIOUS_TRACK") {
-        attributeState("default", action: "previousButton")
+        attributeState("default", action: "rewind")
       }
 
       tileAttribute("device.status", key: "NEXT_TRACK") {
-        attributeState("default", action: "nextButton")
+        attributeState("default", action: "forward")
+      }
+
+      tileAttribute ("device.mute", key: "MEDIA_MUTED") {
+        attributeState("unmuted", action:"mute", nextState: "muted")
+        attributeState("muted", action:"unmute", nextState: "unmuted")
       }
 
       tileAttribute("device.trackDescription", key: "MARQUEE") {
@@ -76,31 +97,19 @@ metadata {
     }
 
     standardTile(
-      "refresh", "device.status",  width: 2, height: 2, inactiveLabel: false,
-      decoration: "flat") {
-      state(
-        "default", label: '', action: "refresh.refresh",
-        icon: "st.secondary.refresh", backgroundColor: "#ffffff")
-    }
-
-    tiles {
-      valueTile(
-        "model", "device.model", decoration: "flat", width: 4, height: 1) {
-        state "default", label: 'Model: ${currentValue}'
-      }
-
-      valueTile(
-        "userdevicename", "device.userdevicename", decoration: "flat", width: 4,
-        height: 1) {
-        state "default", label: 'Name: ${currentValue}'
-      }
-    }
-
-    standardTile(
-      "homeButton", "device.homeButton",  width: 2, height: 2,
+      "volumeDown", "device.status",  width: 2, height: 1,
       inactiveLabel: false, decoration: "flat") {
-      state("default", label: '', action: "homeButton", icon: "st.Home.home2",
-        backgroundColor: "#ffffff")
+      state("default", label: 'Down', action: 'pressKeyVolumeDown', icon: 'st.custom.sonos.unmuted')
+    }
+    standardTile(
+      "volumeUp", "device.status",  width: 2, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state("default", label: 'Up', action: 'pressKeyVolumeUp', icon: 'st.custom.sonos.unmuted')
+    }
+    standardTile(
+      "refresh", "device.status",  width: 4, height: 1, inactiveLabel: false,
+      decoration: "flat") {
+      state("default", label: 'Refresh State', action: "refresh.refresh")
     }
 
     standardTile(
@@ -111,7 +120,72 @@ metadata {
         icon: "st.switches.switch.off", backgroundColor: "#ffffff")
     }
 
+    standardTile(
+      "keyHome", "device.status",  width: 1, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state("default", label: '', icon: "st.Home.home2",
+        action: 'pressKeyHome', backgroundColor: "#ffffff")
+    }
+    standardTile(
+      "keyLeft", "device.status",  width: 1, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state(
+        "default", icon: 'st.thermostat.thermostat-left',
+        action: 'pressKeyLeft')
+    }
+    standardTile(
+      "keyRight", "device.status",  width: 1, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state(
+        "default", icon: 'st.thermostat.thermostat-right',
+        action: 'pressKeyRight')
+    }
+    standardTile(
+      "keyUp", "device.status",  width: 1, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state(
+        "default", icon: 'st.thermostat.thermostat-up',
+        action: 'pressKeyUp')
+    }
+    standardTile(
+      "keyDown", "device.status",  width: 1, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state(
+        "default", icon: 'st.thermostat.thermostat-down',
+        action: 'pressKeyDown')
+    }
+    standardTile(
+      "keySelect", "device.status",  width: 1, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state("default", label: 'Select', action: 'pressKeySelect')
+    }
+    standardTile(
+      "keyInfo", "device.status",  width: 1, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state("default", label: '*', action: 'pressKeyInfo')
+    }
+    standardTile(
+      "keyBack", "device.status",  width: 1, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state("default", label: '<-', action: 'pressKeyBack')
+    }
+    standardTile(
+      "keyInstantReplay", "device.status",  width: 2, height: 1,
+      inactiveLabel: false, decoration: "flat") {
+      state("default", label: 'Instant Replay', action: 'pressKeyInstantReplay')
+    }
+
+
     tiles {
+      valueTile(
+        "model", "device.model", decoration: "flat", width: 4, height: 1) {
+        state "default", label: 'Model: ${currentValue}'
+      }
+      valueTile(
+        "userdevicename", "device.userdevicename", decoration: "flat", width: 4,
+        height: 1) {
+        state "default", label: 'Name: ${currentValue}'
+      }
       valueTile(
         "softwareVersion", "device.softwareversion", decoration: "flat",
         width: 4, height: 1) {
@@ -129,8 +203,17 @@ metadata {
     }
 
     main "main"
-    details(["main", "refresh", "userdevicename", "model", "homeButton",
-             "softwareVersion", "deviceId", "switch", "channels"])
+    // Formatting matches how it appears on a Nexus 5x
+    details(["main",
+             "keyHome", "keyLeft", "keyUp", "keySelect", "keyDown", "keyRight",
+             "switch", "volumeDown",  "volumeUp",
+                       "keyInfo", "keyBack", "keyInstantReplay",
+             "userdevicename",
+             "model",
+             "softwareVersion",
+             "deviceId",
+             "channels",
+             "refresh"])
   }
 }
 
@@ -449,39 +532,87 @@ def pressKey(keyValue) {
   rokuKeyPressAppAction(keyValue)
 }
 
-/*** selectButton
-  Act as if the OK button is pressed on the remote.
+/*** pause
+  Act as if the pause/play button is pressed on the remote.
 ***/
-def selectButton() {
-  rokuKeyPressAppAction("Select")
-  //Refresh Current Activity after 5 ish seconds
-  runIn(5, getCurrentActivity)
+def pause() {
+  rokuKeyPressAppAction("Play")
 }
 
-/*** homeButton
-  Act as if the Home button is pressed on the remote.
-
-  This is connected to play button in the top Panel.
+/*** play
+  Act as if the pause/play button is pressed on the remote.
 ***/
-def homeButton() {
+def play() {
+  rokuKeyPressAppAction("Play")
+}
+
+/*** rewind
+  Act as if the 'Rev' button is pressed on the remote.
+***/
+def rewind() {
+  rokuKeyPressAppAction("Rev")
+}
+
+/*** forward
+  Act as if the 'Fwd' button is pressed on the remote.
+***/
+def forward() {
+  rokuKeyPressAppAction("Fwd")
+}
+
+/*** mute
+  Act as if the 'Volume Mute' button is pressed on the remote.
+***/
+def mute() {
+  rokuKeyPressAppAction("VolumeMute")
+}
+
+/*** unmute
+  Act as if the 'Volume Mute' button is pressed on the remote.
+***/
+def unmute() {
+  rokuKeyPressAppAction("VolumeMute")
+}
+
+
+// Button Key presses.
+def pressKeyVolumeDown() {
+  rokuKeyPressAppAction("VolumeDown")
+}
+def pressKeyVolumeUp() {
+  rokuKeyPressAppAction("VolumeUp")
+}
+def pressKeyHome() {
   rokuKeyPressAppAction("Home")
-  //Refresh Current Activity after 5 ish seconds
-  runIn(5, getCurrentActivity)
 }
-
-/*** nextButton
-  Act as if the Right Arrow button is pressed on the remote.
-***/
-def nextButton() {
-  rokuKeyPressAppAction("Right")
-}
-
-/*** previousButton
-  Act as if the Right Arrow button is pressed on the remote.
-***/
-def previousButton() {
+def pressKeyLeft() {
   rokuKeyPressAppAction("Left")
 }
+def pressKeyRight() {
+  rokuKeyPressAppAction("Right")
+}
+def pressKeyUp() {
+  rokuKeyPressAppAction("Up")
+}
+def pressKeyDown() {
+  rokuKeyPressAppAction("Down")
+}
+def pressKeySelect() {
+  rokuKeyPressAppAction("Select")
+}
+def pressKeyEnter() {
+  rokuKeyPressAppAction("Enter")
+}
+def pressKeyInstantReplay() {
+  rokuKeyPressAppAction("InstantReplay")
+}
+def pressKeyInfo() {
+  rokuKeyPressAppAction("Info")
+}
+def pressKeyBack() {
+  rokuKeyPressAppAction("Back")
+}
+
 //^^^^^^^^^^^^^^ Custom Commands ^^^^^^^^^^^^^^//
 
 
