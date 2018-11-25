@@ -289,7 +289,7 @@ void rokuQueryAppsReponse(physicalgraph.device.HubResponse hubResponse) {
   // Update the set of apps for this roku device.
   d.apps = [:]
   hubResponse.xml.children().each {
-    d.apps[it.attributes().id] = it.text()
+    d.apps[it.@id] = it.text()
   }
 }
 
